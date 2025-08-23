@@ -1,0 +1,134 @@
+// データベースを初期化
+const db = new Dexie('esaDB');
+
+db.version(1).stores({
+    pets: '++id, name, type',
+    feeds: '++id, petId, date',
+    meta: '&key, value'
+});
+
+// 初回の仮データ
+async function initializeOnce() {
+    // 初期化済みのフラグがあるかどうかチェック
+    const initialized = await db.meta.get('isInitialized');
+    // まだ初期化してない場合は仮ペット追加
+    if (!initialized) {
+        await db.pets.add({
+            name: 'ペット1（名前を入力してね）',
+            type: 'ペットの種類を入力してね'
+        });
+        // 初期化済みのフラグ追加
+        await db.meta.put({ key: 'isInitialized', value: true });
+    }
+}
+
+// 2つの日付が同じ年月日かどうかを判定する関数
+function isSameDay(date1, date2) {
+    return (
+        date1.getFullYear() === date2.getFullYear() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate()
+    );
+}
+
+// エサやり記録追加(チェックON)
+async function recordFeed(petId) {
+    // 日時
+    const now = new Date();
+    // db.feeds に新しいエサやりの記録を追加
+    const feedId = await db.feeds.add({
+        petId,
+        date: now
+    });
+    // 追加したエサやりの記録のIDを返す
+    return feedId;
+}
+
+// エサやり記録削除(チェックOFF)
+async function undoFeed(petId) {
+    const today = new Date();
+
+    const feed = await db.feeds
+        .where('petId').equals(petId)
+        .toArray()
+        .then(list => list.find(f => isSameDay(new Date(f.date), today)));
+
+    if (feed) {
+        await db.feeds.delete(feed.id);
+    } else {
+        console.warn('今日のエサやり記録が見つかりませんでした');
+    }
+}
+
+// ペット一覧を描画
+async function renderPetList() {
+    // dbからデータ取得
+    const pets = await db.pets.toArray();
+    const feeds = await db.feeds.toArray();
+    // 今日の日付
+    const today = new Date();
+    // 描画したい箇所の要素取得
+    const container = document.getElementById('petList');
+    // 要素の中身をクリア
+    container.innerHTML = '';
+
+    // ペットなしの場合
+    if (pets.length === 0) {
+        container.innerHTML = '<p>表示するペットがいません。</p>';
+        return;
+    }
+
+    // pets内の各petについて処理を行う
+    for (const pet of pets) {
+        // 今日そのペットに餌をあげたかどうか
+        const todayFeed = feeds.find(f => {
+            return f.petId === pet.id && isSameDay(new Date(f.date), today);
+        });
+
+        // div要素作成、餌をあげたならチェック状態に
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label>
+                <span class="petType">${pet.type}</span>/
+                <span class="petName">${pet.name}</span>
+                <input type="checkbox" data-pet-id="${pet.id}" ${todayFeed ? 'checked' : ''}>
+            </label>
+        `;
+        container.appendChild(div);
+    }
+
+    // チェックボックスすべてにイベントリスナーを追加。recordFeed/undoFeed
+    container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', async (e) => {
+            const petId = Number(e.target.dataset.petId);
+            if (e.target.checked) {
+                await recordFeed(petId);
+            } else {
+                await undoFeed(petId);
+            }
+            await renderPetList();
+        });
+    });
+}
+
+// 日付が変わった時には再描画
+function scheduleMidnightRefresh() {
+    const now = new Date();
+    const nextMidnight = new Date(now);
+    nextMidnight.setHours(24, 0, 0, 0); // 翌日の0:00:00.000
+
+    const timeout = nextMidnight - now;
+
+    setTimeout(() => {
+        renderPetList(); // 日付が変わったら再描画
+        scheduleMidnightRefresh(); // 次回のタイミングもスケジュール
+    }, timeout);
+}
+
+// Webアプリ起動
+async function startApp() {
+    await initializeOnce();
+    await renderPetList();
+}
+startApp();
+scheduleMidnightRefresh();
