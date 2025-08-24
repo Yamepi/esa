@@ -72,9 +72,6 @@ async function undoFeed(petId) {
 
 // ペット1匹の表示要素を作成
 function createPetElement(pet, feeds, pastDates, today) {
-    // 今日餌やりしたか確認
-    const todayFeed = feeds.find(f => f.petId === pet.id && isSameDay(new Date(f.date), today));
-
     // メインコンテナ
     const div = document.createElement('div');
     div.classList.add('pet-entry');
