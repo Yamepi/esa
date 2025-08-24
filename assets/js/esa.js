@@ -68,7 +68,7 @@ async function renderPetList() {
     // 今日の日付
     const today = new Date();
     // 描画したい箇所の要素取得
-    const container = document.getElementById('petList');
+    const container = document.getElementById('pet-list');
     // 要素の中身をクリア
     container.innerHTML = '';
 
@@ -89,12 +89,19 @@ async function renderPetList() {
         const div = document.createElement('div');
         div.innerHTML = `
             <label>
-                <span class="petType">${pet.type}</span>/
-                <span class="petName">${pet.name}</span>
+                <button class="editPetBtn" data-pet-id="${pet.id}">名前を編集</button>
+                <span class="pet-type">${pet.type}</span>/
+                <span class="pet-name">${pet.name}</span>
                 <input type="checkbox" data-pet-id="${pet.id}" ${todayFeed ? 'checked' : ''}>
             </label>
         `;
         container.appendChild(div);
+
+        // 編集ボタン
+        div.querySelector('.editPetBtn').addEventListener('click', async () => {
+            const fullPetData = await db.pets.get(pet.id);
+            openEditModal(fullPetData);
+        });
     }
 
     // チェックボックスすべてにイベントリスナーを追加。recordFeed/undoFeed
@@ -109,6 +116,45 @@ async function renderPetList() {
             await renderPetList();
         });
     });
+}
+
+// 編集画面
+function openEditModal(pet) {
+    const modal = document.getElementById('edit-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    modalContent.innerHTML = ''; // 既存内容をクリア
+
+    const form = document.createElement('form');
+    form.innerHTML = `
+        <h2>名前を編集</h2>
+        <label>
+            名前:<input type="text" name="name" value="${pet.name}" required>
+        </label><br>
+        <label>
+            種類:<input type="text" name="type" value="${pet.type}" required>
+        </label><br>
+        <button type="submit">これでOK</button>
+    `;
+
+    // フォーム送信でDB更新
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = form.elements['name'].value;
+        const type = form.elements['type'].value;
+
+        await db.pets.update(pet.id, { name, type });
+        closeModal();
+        await renderPetList();
+    });
+
+    modalContent.appendChild(form);
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    const modal = document.getElementById('edit-modal');
+    modal.style.display = 'none';
 }
 
 // 日付が変わった時には再描画
