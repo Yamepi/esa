@@ -183,6 +183,7 @@ function openEditModal(pet) {
         <label>
             種類:<input type="text" name="type" value="${pet.type}" required>
         </label><br>
+        <button type="button" id="cancel-edit-btn">キャンセル</button>
         <button type="submit">これでOK</button>
     `;
 
@@ -195,6 +196,11 @@ function openEditModal(pet) {
         await db.pets.update(pet.id, { name, type });
         closeModal();
         await renderPetList();
+    });
+
+    // キャンセルボタン → モーダルを閉じるだけ
+    form.querySelector('#cancel-edit-btn').addEventListener('click', () => {
+        closeModal();
     });
 
     modalContent.appendChild(form);
