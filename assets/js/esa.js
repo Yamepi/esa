@@ -67,7 +67,7 @@ async function renderPetList() {
     const feeds = await db.feeds.toArray();
     // 今日の日付
     const today = new Date();
-    // 描画したい箇所の要素取得
+
     const container = document.getElementById('pet-list');
     // 要素の中身をクリア
     container.innerHTML = '';
@@ -76,6 +76,14 @@ async function renderPetList() {
     if (pets.length === 0) {
         container.innerHTML = '<p>表示するペットがいません。</p>';
         return;
+    }
+
+    // 直近14日分の日付を作成
+    const pastDates = [];
+    for (let i = 13; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        pastDates.push(d);
     }
 
     // pets内の各petについて処理を行う
@@ -87,6 +95,9 @@ async function renderPetList() {
 
         // div要素作成、餌をあげたならチェック状態に
         const div = document.createElement('div');
+        div.classList.add('pet-entry');
+
+        // 編集・チェックボックス部
         div.innerHTML = `
             <label>
                 <button class="editPetBtn" data-pet-id="${pet.id}">名前を編集</button>
@@ -95,6 +106,39 @@ async function renderPetList() {
                 <input type="checkbox" data-pet-id="${pet.id}" ${todayFeed ? 'checked' : ''}>
             </label>
         `;
+
+        // 餌やり履歴部
+        const historyDiv = document.createElement('div');
+        historyDiv.classList.add('feed-history');
+
+        // 過去14日分を表示
+        // 日付 or ・ を表示
+        for (const date of pastDates) {
+            const feed = feeds.find(f =>
+                f.petId === pet.id && isSameDay(new Date(f.date), date)
+            );
+
+            const span = document.createElement('span');
+            span.style.marginRight = '6px';
+
+            if (feed) {
+                const m = date.getMonth() + 1;
+                const d = date.getDate();
+
+                span.innerHTML = `
+            <span class="month">${m}</span>
+            <span class="slash">/</span>
+            <span class="day">${d}</span>
+        `;
+            } else {
+                span.textContent = '・';
+                span.classList.add('no-feed');
+            }
+
+            historyDiv.appendChild(span);
+        }
+
+        div.appendChild(historyDiv);
         container.appendChild(div);
 
         // 編集ボタン
@@ -116,6 +160,11 @@ async function renderPetList() {
             await renderPetList();
         });
     });
+}
+
+// ヘルパー関数： M/D 形式で日付を表示
+function formatDate(date) {
+    return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
 // 編集画面
