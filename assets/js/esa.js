@@ -201,9 +201,12 @@ function openEditModal(pet) {
     modal.style.display = 'flex';
 }
 
+// 共通で使うモーダルを閉じる関数
 function closeModal() {
-    const modal = document.getElementById('edit-modal');
-    modal.style.display = 'none';
+    const modals = document.querySelectorAll('#edit-modal, #add-modal');
+    modals.forEach(modal => {
+        modal.style.display = 'none';
+    });
 }
 
 // 日付が変わった時には再描画
@@ -227,3 +230,48 @@ async function startApp() {
 }
 startApp();
 scheduleMidnightRefresh();
+
+// ペット追加モーダル
+function openAddModal() {
+    const modal = document.getElementById('add-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    modalContent.innerHTML = ''; // 既存内容をクリア
+
+    const form = document.createElement('form');
+    form.innerHTML = `
+        <h2>ペットを追加</h2>
+        <label>
+            名前:<input type="text" name="name" required>
+        </label><br>
+        <label>
+            種類:<input type="text" name="type" required>
+        </label><br>
+        <button type="button" id="cancel-add-btn">キャンセル</button>
+        <button type="submit">これでOK</button>
+    `;
+
+    // フォーム送信でDBに新しいペットを追加
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = form.elements['name'].value;
+        const type = form.elements['type'].value;
+
+        await db.pets.add({ name, type });
+        closeModal();
+        await renderPetList();
+    });
+
+    // キャンセルボタン処理
+    form.querySelector('#cancel-add-btn').addEventListener('click', () => {
+        closeModal();
+    });
+
+    modalContent.appendChild(form);
+    modal.style.display = 'flex';
+}
+
+// 追加ボタンにイベントリスナー
+document.getElementById('add-pet-btn').addEventListener('click', () => {
+    openAddModal();
+});

@@ -1,6 +1,10 @@
-#edit-modal {
+.pet-entry {
+    margin-top: 20px;
+}
+
+#edit-modal,
+#add-modal {
     display: none;
-    /* 最初は非表示 */
     position: fixed;
     top: 0;
     left: 0;
