@@ -2,6 +2,10 @@
     margin-top: 20px;
 }
 
+.pet-image {
+    image-rendering: pixelated;
+}
+
 #edit-modal,
 #add-modal {
     display: none;

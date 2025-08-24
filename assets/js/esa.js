@@ -2,7 +2,7 @@
 const db = new Dexie('esaDB');
 
 db.version(1).stores({
-    pets: '++id, name, type',
+    pets: '++id, name, type, image',
     feeds: '++id, petId, date',
     meta: '&key, value'
 });
@@ -28,6 +28,30 @@ function isSameDay(date1, date2) {
     );
 }
 
+// 画像を32x32にリサイズする関数
+function resizeImageToBase64(file, width = 32, height = 32) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = e => {
+            img.src = e.target.result;
+        };
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/png')); // ← Base64 string
+        };
+
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 // エサやり記録追加
 async function recordFeed(petId) {
     const now = new Date();
@@ -50,61 +74,104 @@ async function undoFeed(petId) {
 function createPetElement(pet, feeds, pastDates, today) {
     // 今日餌やりしたか確認
     const todayFeed = feeds.find(f => f.petId === pet.id && isSameDay(new Date(f.date), today));
-    // DOM作成
+
+    // メインコンテナ
     const div = document.createElement('div');
     div.classList.add('pet-entry');
     div.dataset.petId = pet.id;
 
-    div.innerHTML = `
-        <label>
-            <button class="editPetBtn" data-pet-id="${pet.id}">名前を編集</button>
-            <span class="pet-type">${pet.type}</span>/
-            <span class="pet-name">${pet.name}</span>
-            <input type="checkbox" data-pet-id="${pet.id}" ${todayFeed ? 'checked' : ''}>
-        </label>
-    `;
+    // 画像がある場合
+    if (pet.image) {
+        div.classList.add('has-image');
+        const img = document.createElement('img');
+        img.src = pet.image;
+        img.classList.add('pet-image');
+        img.width = 64;
+        img.height = 64;
+        img.alt = `${pet.name}のアイコン`;
+        div.appendChild(img);
+    } else {
+        div.classList.add('no-image');
+    }
 
-    // 餌やり履歴表示部分
+    // 内部コンテンツ用のラッパー
+    const content = document.createElement('div');
+    content.classList.add('pet-entry-content');
+
+    // 編集ボタン（右上固定）
+    const editBtn = document.createElement('button');
+    editBtn.classList.add('editPetBtn');
+    editBtn.textContent = '✏️';
+    editBtn.dataset.petId = pet.id;
+    content.appendChild(editBtn);
+
+    // 名前・タイプ・チェックボックス
+    const info = document.createElement('div');
+    info.classList.add('pet-main');
+    info.innerHTML = `
+        <span class="pet-type">${pet.type}</span> / <span class="pet-name">${pet.name}</span>
+    `;
+    content.appendChild(info);
+
+    div.appendChild(content);
+
+    // 履歴表示
     const historyDiv = document.createElement('div');
     historyDiv.classList.add('feed-history');
 
-    // 過去の履歴表示
-    for (const date of pastDates) {
-        const feed = feeds.find(f =>
-            f.petId === pet.id && isSameDay(new Date(f.date), date)
-        );
+    pastDates.forEach(date => {
+        const isToday = isSameDay(date, today);
+        const feed = feeds.find(f => f.petId === pet.id && isSameDay(new Date(f.date), date));
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('history-item');
 
-        const span = document.createElement('span');
-        span.style.marginRight = '6px';
+        if (isToday) {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = !!feed;
+            checkbox.dataset.petId = pet.id;
 
-        if (feed) {
+            checkbox.addEventListener('change', async (e) => {
+                if (e.target.checked) {
+                    await recordFeed(pet.id);
+                } else {
+                    await undoFeed(pet.id);
+                }
+                await updatePetElement(pet.id);
+            });
+
+            const dateSpan = document.createElement('span');
             const m = date.getMonth() + 1;
             const d = date.getDate();
-            span.innerHTML = `<span class="month">${m}</span>/<span class="day">${d}</span>`;
+            dateSpan.textContent = `${m}/${d}`;
+            dateSpan.classList.add('date-label');
+
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(dateSpan);
+            wrapper.classList.add('is-today');
         } else {
-            span.textContent = '・';
-            span.classList.add('no-feed');
+            const span = document.createElement('span');
+            if (feed) {
+                const m = date.getMonth() + 1;
+                const d = date.getDate();
+                span.textContent = `☑️${m}/${d}`;
+                span.classList.add('has-feed');
+            } else {
+                span.textContent = '・';
+                span.classList.add('no-feed');
+            }
+            wrapper.appendChild(span);
         }
 
-        historyDiv.appendChild(span);
-    }
+        historyDiv.appendChild(wrapper);
+    });
 
     div.appendChild(historyDiv);
 
-    // 編集ボタン
-    div.querySelector('.editPetBtn').addEventListener('click', async () => {
+    // 編集ボタン → モーダル表示
+    editBtn.addEventListener('click', async () => {
         const fullPetData = await db.pets.get(pet.id);
         openEditModal(fullPetData);
-    });
-
-    // チェックボックス変更時
-    div.querySelector('input[type="checkbox"]').addEventListener('change', async (e) => {
-        if (e.target.checked) {
-            await recordFeed(pet.id);
-        } else {
-            await undoFeed(pet.id);
-        }
-        await updatePetElement(pet.id); // 一部再描画
     });
 
     return div;
@@ -164,33 +231,82 @@ function openEditModal(pet) {
     const modal = document.getElementById('edit-modal');
     const modalContent = modal.querySelector('.modal-content');
 
-    modalContent.innerHTML = `
-        <h2>名前を編集</h2>
-        <form id="edit-form">
-            <label>
-                名前:<input type="text" name="name" value="${pet.name}" required>
-            </label><br>
-            <label>
-                種類:<input type="text" name="type" value="${pet.type}" required>
-            </label><br>
-            <button type="button" id="cancel-edit-btn">キャンセル</button>
-            <button type="submit">これでOK</button>
-        </form>
+    modalContent.innerHTML = ''; // 既存内容をクリア
+
+    const form = document.createElement('form');
+    form.innerHTML = `
+        <h2>ペットを編集</h2>
+        <label>
+            名前: <input type="text" name="name" value="${pet.name}" required>
+        </label><br>
+        <label>
+            種類: <input type="text" name="type" value="${pet.type}" required>
+        </label><br>
+        <label>
+            画像変更: <input type="file" name="image" accept="image/*">
+        </label><br>
+        <div id="current-image-preview" style="margin: 8px 0;">
+            ${pet.image ? `<img src="${pet.image}" width="32" height="32" alt="現在の画像"><br>` : '（画像なし）'}
+        </div>
+        <button type="button" id="delete-image-btn">画像を削除</button><br><br>
+        <button type="button" id="cancel-edit-btn">キャンセル</button>
+        <button type="submit">これでOK</button>
     `;
 
-    modalContent.querySelector('#cancel-edit-btn').addEventListener('click', closeModal);
+    let newImage = null; // 新しく選ばれた画像（Base64）
 
-    modalContent.querySelector('#edit-form').addEventListener('submit', async (e) => {
+    // 画像がアップロードされたら Base64 に変換
+    form.elements['image'].addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            newImage = await resizeImageToBase64(file, 32, 32); // 32x32 に変換して保存
+            const preview = form.querySelector('#current-image-preview');
+            preview.innerHTML = `<img src="${newImage}" width="32" height="32"><br>`;
+        }
+    });
+
+    // 「画像を削除」ボタン処理
+    form.querySelector('#delete-image-btn').addEventListener('click', () => {
+        newImage = null;
+        form.elements['image'].value = ''; // ファイル選択リセット
+        const preview = form.querySelector('#current-image-preview');
+        preview.innerHTML = '（画像なし）';
+    });
+
+    // フォーム送信でDB更新
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const form = e.target;
         const name = form.elements['name'].value;
         const type = form.elements['type'].value;
 
-        await db.pets.update(pet.id, { name, type });
+        const updatedFields = { name, type };
+
+        // ファイルが選ばれている → 画像を新しくする
+        if (form.elements['image'].files.length > 0) {
+            updatedFields.image = newImage;
+        }
+
+        // ファイルが選ばれていない & 元画像がある & preview が空になってる → 削除された
+        const preview = form.querySelector('#current-image-preview');
+        if (
+            form.elements['image'].files.length === 0 &&
+            pet.image &&
+            !preview.querySelector('img')
+        ) {
+            updatedFields.image = null;
+        }
+
+        await db.pets.update(pet.id, updatedFields);
         closeModal();
-        await updatePetElement(pet.id); // ここも一部だけ再描画
+        await updatePetElement(pet.id);
     });
 
+    // キャンセル → モーダルを閉じるだけ
+    form.querySelector('#cancel-edit-btn').addEventListener('click', () => {
+        closeModal();
+    });
+
+    modalContent.appendChild(form);
     modal.style.display = 'flex';
 }
 
@@ -215,22 +331,68 @@ function openAddModal() {
             <label>
                 種類:<input type="text" name="type" required>
             </label><br>
+            <label>
+                アイコン画像(32x32): <input type="file" name="image" accept="image/*">
+            </label><br>
+            <div id="current-image-preview" style="margin: 8px 0;">（画像なし）</div>
+            <button type="button" id="delete-image-btn">画像を削除</button><br><br>
             <button type="button" id="cancel-add-btn">キャンセル</button>
             <button type="submit">これでOK</button>
         </form>
     `;
 
-    modalContent.querySelector('#cancel-add-btn').addEventListener('click', closeModal);
+    const form = modalContent.querySelector('#add-form');
+    const imageInput = form.elements['image'];
+    const preview = form.querySelector('#current-image-preview');
 
-    modalContent.querySelector('#add-form').addEventListener('submit', async (e) => {
+    let newImage = null;
+
+    // 画像がアップロードされたらプレビュー＆Base64変換
+    imageInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            newImage = await resizeImageToBase64(file);
+            preview.innerHTML = `<img src="${newImage}" width="32" height="32"><br>`;
+        }
+    });
+
+    // 画像削除ボタン
+    form.querySelector('#delete-image-btn').addEventListener('click', () => {
+        newImage = null;
+        imageInput.value = '';
+        preview.innerHTML = '（画像なし）';
+    });
+
+    // キャンセル
+    form.querySelector('#cancel-add-btn').addEventListener('click', closeModal);
+
+    // 送信で保存＆描画
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const form = e.target;
         const name = form.elements['name'].value;
         const type = form.elements['type'].value;
 
-        const petId = await db.pets.add({ name, type });
+        const newPet = { name, type };
+        if (newImage) {
+            newPet.image = newImage;
+        }
+
+        const petId = await db.pets.add(newPet);
         closeModal();
-        await updatePetElement(petId); // 追加分だけ描画
+
+        const pet = await db.pets.get(petId);
+        const feeds = await db.feeds.toArray();
+        const today = new Date();
+        const pastDates = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            pastDates.push(d);
+        }
+
+        const newElement = createPetElement(pet, feeds, pastDates, today);
+        const container = document.getElementById('pet-list');
+        container.appendChild(newElement);
     });
 
     modal.style.display = 'flex';
