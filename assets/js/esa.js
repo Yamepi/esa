@@ -77,40 +77,32 @@ function createPetElement(pet, feeds, pastDates, today) {
     div.classList.add('pet-entry');
     div.dataset.petId = pet.id;
 
+    // 編集ボタン
+    const editBtn = document.createElement('button');
+    editBtn.classList.add('editPetBtn');
+    editBtn.textContent = 'EDIT';
+    editBtn.dataset.petId = pet.id;
+    div.appendChild(editBtn);
+
     // 画像がある場合
     if (pet.image) {
         div.classList.add('has-image');
         const img = document.createElement('img');
         img.src = pet.image;
         img.classList.add('pet-image');
-        img.width = 64;
-        img.height = 64;
         img.alt = `${pet.name}のアイコン`;
         div.appendChild(img);
     } else {
         div.classList.add('no-image');
     }
 
-    // 内部コンテンツ用のラッパー
-    const content = document.createElement('div');
-    content.classList.add('pet-entry-content');
-
-    // 編集ボタン（右上固定）
-    const editBtn = document.createElement('button');
-    editBtn.classList.add('editPetBtn');
-    editBtn.textContent = '✏️';
-    editBtn.dataset.petId = pet.id;
-    content.appendChild(editBtn);
-
-    // 名前・タイプ・チェックボックス
     const info = document.createElement('div');
-    info.classList.add('pet-main');
+    info.classList.add('pet-info');
     info.innerHTML = `
-        <span class="pet-type">${pet.type}</span> / <span class="pet-name">${pet.name}</span>
+        <span class="pet-type">${pet.type}</span>
+        <span class="pet-name">${pet.name}</span>
     `;
-    content.appendChild(info);
-
-    div.appendChild(content);
+    div.appendChild(info);
 
     // 履歴表示
     const historyDiv = document.createElement('div');
@@ -126,6 +118,7 @@ function createPetElement(pet, feeds, pastDates, today) {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = !!feed;
+            checkbox.classList.add('today-feed-check');
             checkbox.dataset.petId = pet.id;
 
             checkbox.addEventListener('change', async (e) => {
@@ -138,25 +131,48 @@ function createPetElement(pet, feeds, pastDates, today) {
             });
 
             const dateSpan = document.createElement('span');
+            dateSpan.classList.add('date-label');
+
             const m = date.getMonth() + 1;
             const d = date.getDate();
-            dateSpan.textContent = `${m}/${d}`;
-            dateSpan.classList.add('date-label');
+
+            const monthSpan = document.createElement('span');
+            monthSpan.className = 'month';
+            monthSpan.textContent = m;
+
+            const daySpan = document.createElement('span');
+            daySpan.className = 'day';
+            daySpan.textContent = d;
+
+            dateSpan.appendChild(monthSpan);
+            dateSpan.appendChild(daySpan);
 
             wrapper.appendChild(checkbox);
             wrapper.appendChild(dateSpan);
             wrapper.classList.add('is-today');
         } else {
             const span = document.createElement('span');
+
             if (feed) {
+                span.classList.add('has-feed');
+
                 const m = date.getMonth() + 1;
                 const d = date.getDate();
-                span.textContent = `☑️${m}/${d}`;
-                span.classList.add('has-feed');
+
+                const monthSpan = document.createElement('span');
+                monthSpan.className = 'month';
+                monthSpan.textContent = m;
+
+                const daySpan = document.createElement('span');
+                daySpan.className = 'day';
+                daySpan.textContent = d;
+
+                span.appendChild(monthSpan);
+                span.appendChild(daySpan);
             } else {
-                span.textContent = '・';
                 span.classList.add('no-feed');
             }
+
             wrapper.appendChild(span);
         }
 
@@ -178,6 +194,7 @@ function createPetElement(pet, feeds, pastDates, today) {
 async function updatePetElement(petId) {
     const pet = await db.pets.get(petId);
     const feeds = await db.feeds.toArray();
+    feeds.sort((a, b) => new Date(a.date) - new Date(b.date));
     const today = new Date();
     const pastDates = [];
     for (let i = 13; i >= 0; i--) {
@@ -200,6 +217,7 @@ async function updatePetElement(petId) {
 async function renderPetList() {
     const pets = await db.pets.toArray();
     const feeds = await db.feeds.toArray();
+    feeds.sort((a, b) => new Date(a.date) - new Date(b.date));
     const today = new Date();
 
     const pastDates = [];
@@ -379,6 +397,7 @@ function openAddModal() {
 
         const pet = await db.pets.get(petId);
         const feeds = await db.feeds.toArray();
+        feeds.sort((a, b) => new Date(a.date) - new Date(b.date));
         const today = new Date();
         const pastDates = [];
         for (let i = 13; i >= 0; i--) {
