@@ -1,9 +1,216 @@
+html {
+    font-size: 16px;
+    /* 基準サイズ */
+}
+
+body {
+    color: #222;
+    background-color: #e7e3d7;
+    font-size: 1rem;
+    /* 基準サイズを1とする単位 */
+    font-family:
+        -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto,
+        "Helvetica Neue", "Noto Sans JP",
+        sans-serif;
+}
+
+main {
+    padding: 10px;
+}
+
+/* ペットのリスト表示エリア */
+#pet-list {
+    max-width: 500px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ペット追加エリア */
+#add-pet-container {
+    max-width: 500px;
+    margin-inline: auto;
+    margin-top: 10px;
+}
+
+/* ペット追加ボタン */
+#add-pet-btn {
+    all: unset;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    background-color: #f1f1f1;
+    padding: 15px;
+}
+
+/* ペットの情報（グリッドレイアウト） */
 .pet-entry {
-    margin-top: 20px;
+    background-color: #f1f1f1;
+    padding: 5px;
+    display: grid;
+    grid-template-rows: 24px 50px 50px;
+    grid-template-columns: 24px 74px 1fr 48px;
+}
+
+.editPetBtn {
+    all: unset;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.5rem;
+    transform: rotate(-45deg);
 }
 
 .pet-image {
     image-rendering: pixelated;
+    padding: 5px;
+    grid-row: 1 / 3;
+    grid-column: 2 / 3;
+    width: 64px;
+    height: 64px;
+}
+
+.pet-info {
+    grid-row: 1 / 3;
+    grid-column: 3 / 4;
+    display: flex;
+    flex-direction: column;
+}
+
+.pet-type {
+    font-size: 1rem;
+}
+
+.pet-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.feed-history {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    width: 100%;
+    gap: 0;
+    grid-row: 3 / 4;
+    grid-column: 1 / 5;
+}
+
+.history-item {
+    text-align: center;
+}
+
+/* 過去の餌やりのチェックボックス */
+.has-feed {
+    position: relative;
+    font-size: 0.8rem;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #aaabbc;
+    border-radius: 2px;
+    background-color: #aaabbc;
+    margin-bottom: 3px;
+}
+
+/* 過去の餌やりのチェックマーク */
+.has-feed::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 1px;
+    width: 14px;
+    height: 8px;
+    border-left: 4px solid #fff;
+    border-bottom: 4px solid #fff;
+    transform: rotate(-45deg);
+}
+
+/* 過去の餌やりの日付 */
+.has-feed .month,
+.has-feed .day {
+    position: relative;
+    display: inline-block;
+    top: 20px;
+}
+
+.has-feed .month {
+    left: -0.4rem;
+}
+
+.has-feed .day {
+    left: 0.4rem;
+}
+
+/* 日付斜め線 */
+.has-feed::before,
+.today-feed-check::before {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: 8px;
+    width: 1px;
+    height: 18px;
+    background-color: #222;
+    transform: rotate(45deg);
+}
+
+/* 餌やりしてない日 */
+.no-feed::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    background-color: #aaabbc;
+    border-radius: 50%;
+}
+
+/* 今日の日付 */
+.date-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+}
+
+.date-label .month {
+    position: relative;
+    left: -0.4rem;
+}
+
+.date-label .day {
+    position: relative;
+    left: 0.4rem;
+}
+
+/* 今日の餌やりのチェックボックス */
+.today-feed-check {
+    appearance: none;
+    margin: 0;
+    position: relative;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #aaabbc;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.today-feed-check:checked {
+    background-color: #F3A738;
+    border: 2px solid #F3A738;
+}
+
+/* 今日の餌やりのチェックマーク */
+.today-feed-check:checked::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 1px;
+    width: 14px;
+    height: 8px;
+    border-bottom: 4px solid #ffffff;
+    border-left: 4px solid #ffffff;
+    transform: rotate(-45deg);
 }
 
 #edit-modal,
