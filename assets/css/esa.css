@@ -28,21 +28,29 @@ main {
     gap: 10px;
 }
 
-/* ペット追加エリア */
-#add-pet-container {
+/* ツールエリア */
+#tool-container {
+    display: flex;
+    gap: 10px;
     max-width: 500px;
     margin-inline: auto;
     margin-top: 10px;
 }
 
-/* ペット追加ボタン */
-#add-pet-btn {
+/* ペット追加ボタン・並び替えボタン */
+#add-pet-btn,
+#reorder-toggle-btn {
     all: unset;
     display: inline-block;
     text-align: center;
     cursor: pointer;
     background-color: #f1f1f1;
     padding: 15px;
+}
+
+/* 並び替え操作中のスタイル */
+body.reorder-mode #reorder-toggle-btn {
+    background-color: #F3A738;
 }
 
 /* ペットの情報（グリッドレイアウト） */
@@ -211,6 +219,29 @@ main {
     border-bottom: 4px solid #ffffff;
     border-left: 4px solid #ffffff;
     transform: rotate(-45deg);
+}
+
+/* 並び替えコントローラー */
+.reorder-controls {
+    position: relative;
+    top: 0px;
+    left: -24px;
+    height: 124px;
+    width: 24px;
+    display: grid;
+    gap: 10px;
+    grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+}
+
+.reorder-up,
+.reorder-down {
+    all: unset;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    color: #F3A738;
+    background-color: #fff;
+    width: 100%;
 }
 
 #edit-modal,

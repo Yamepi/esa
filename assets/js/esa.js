@@ -2,7 +2,7 @@
 const db = new Dexie('esaDB');
 
 db.version(1).stores({
-    pets: '++id, name, type, image',
+    pets: '++id, name, type, image, order',
     feeds: '++id, petId, date',
     meta: '&key, value'
 });
@@ -13,7 +13,8 @@ async function initializeOnce() {
     if (!initialized) {
         await db.pets.add({
             name: 'ペット1（名前を入力してね）',
-            type: 'ペットの種類を入力してね'
+            type: 'ペットの種類を入力してね',
+            order: 0
         });
         await db.meta.put({ key: 'isInitialized', value: true });
     }
@@ -69,6 +70,54 @@ async function undoFeed(petId) {
         await db.feeds.delete(feed.id);
     }
 }
+
+// 並び替え操作ボタン処理関数
+async function movePetOrder(petId, direction) {
+    const pets = await db.pets.orderBy('order').toArray();
+    const index = pets.findIndex(p => p.id === petId);
+    const swapIndex = index + direction;
+
+    if (swapIndex < 0 || swapIndex >= pets.length) return;
+
+    const container = document.getElementById('pet-list');
+    const petElements = container.querySelectorAll('.pet-entry');
+
+    const currentEl = petElements[index];
+    const targetEl = petElements[swapIndex];
+
+    // アニメーション用クラス
+    currentEl.style.transition = 'transform 0.2s ease';
+    targetEl.style.transition = 'transform 0.2s ease';
+    const offset = currentEl.offsetHeight;
+
+    currentEl.style.transform = `translateY(${direction * offset}px)`;
+    targetEl.style.transform = `translateY(${-direction * offset}px)`;
+
+    // 少し待ってから実際に入れ替え
+    setTimeout(async () => {
+        // リセット
+        currentEl.style.transition = '';
+        targetEl.style.transition = '';
+        currentEl.style.transform = '';
+        targetEl.style.transform = '';
+
+        // 実際のデータ入れ替え
+        const tempOrder = pets[index].order;
+        pets[index].order = pets[swapIndex].order;
+        pets[swapIndex].order = tempOrder;
+
+        await db.pets.update(pets[index].id, { order: pets[index].order });
+        await db.pets.update(pets[swapIndex].id, { order: pets[swapIndex].order });
+
+        await renderPetList();
+    }, 100);
+}
+
+// 並び変え開始ボタン
+document.getElementById('reorder-toggle-btn').addEventListener('click', () => {
+    document.body.classList.toggle('reorder-mode');
+    renderPetList();
+});
 
 // ペット1匹の表示要素を作成
 function createPetElement(pet, feeds, pastDates, today) {
@@ -187,6 +236,26 @@ function createPetElement(pet, feeds, pastDates, today) {
         openEditModal(fullPetData);
     });
 
+    // 並び順編集時に表示
+    if (document.body.classList.contains('reorder-mode')) {
+        const upBtn = document.createElement('button');
+        const downBtn = document.createElement('button');
+        upBtn.textContent = '↑';
+        downBtn.textContent = '↓';
+        upBtn.className = 'reorder-up';
+        downBtn.className = 'reorder-down';
+
+        upBtn.addEventListener('click', () => movePetOrder(pet.id, -1));
+        downBtn.addEventListener('click', () => movePetOrder(pet.id, 1));
+
+        const reorderControls = document.createElement('div');
+        reorderControls.className = 'reorder-controls';
+        reorderControls.appendChild(upBtn);
+        reorderControls.appendChild(downBtn);
+
+        div.appendChild(reorderControls);
+    }
+
     return div;
 }
 
@@ -215,7 +284,7 @@ async function updatePetElement(petId) {
 
 // ペット一覧を描画（初回 or 全体更新用）
 async function renderPetList() {
-    const pets = await db.pets.toArray();
+    const pets = await db.pets.orderBy('order').toArray();
     const feeds = await db.feeds.toArray();
     feeds.sort((a, b) => new Date(a.date) - new Date(b.date));
     const today = new Date();
@@ -387,7 +456,8 @@ function openAddModal() {
         const name = form.elements['name'].value;
         const type = form.elements['type'].value;
 
-        const newPet = { name, type };
+        const petCount = await db.pets.count();
+        const newPet = { name, type, order: petCount };
         if (newImage) {
             newPet.image = newImage;
         }
