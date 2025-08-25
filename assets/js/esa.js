@@ -153,6 +153,42 @@ function createPetElement(pet, feeds, pastDates, today) {
     `;
     div.appendChild(info);
 
+    // 前回のエサやり日からの経過日数
+    const petFeeds = feeds
+        .filter(f => f.petId === pet.id)
+        .map(f => new Date(f.date));
+
+    // 時刻切り捨て
+    const getDateOnly = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    const lastFeedDate = petFeeds.map(getDateOnly).sort((a, b) => b - a)[0];
+    const todayDateOnly = getDateOnly(today);
+
+    // 今日エサやりしていなければ、経過日数を計算
+    if (lastFeedDate && lastFeedDate.getTime() !== todayDateOnly.getTime()) {
+        const diffDays = Math.floor((todayDateOnly - lastFeedDate) / (1000 * 60 * 60 * 24));
+
+        const lastFeedDiv = document.createElement('div');
+        lastFeedDiv.className = 'last-feed';
+
+        const lastFeedLabel = document.createElement('div');
+        lastFeedLabel.className = 'last-feed-label';
+        lastFeedLabel.textContent = '前回のエサ';
+
+        const lastFeedDays = document.createElement('div');
+        lastFeedDays.className = 'last-feed-days';
+        if (diffDays === 1) {
+            lastFeedDays.textContent = 'きのう';
+        } else {
+            lastFeedDays.textContent = `${diffDays}日前`;
+        }
+
+        lastFeedDiv.appendChild(lastFeedLabel);
+        lastFeedDiv.appendChild(lastFeedDays);
+
+        div.appendChild(lastFeedDiv);
+    }
+
     // 履歴表示
     const historyDiv = document.createElement('div');
     historyDiv.classList.add('feed-history');
