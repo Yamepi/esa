@@ -83,6 +83,12 @@ main {
     padding: 15px;
 }
 
+/* 無効な並び替えボタン */
+#reorder-toggle-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
 /* 並び替え操作中のスタイル */
 body.reorder-mode #reorder-toggle-btn {
     background-color: #F3A738;

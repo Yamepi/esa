@@ -119,6 +119,14 @@ document.getElementById('reorder-toggle-btn').addEventListener('click', () => {
     renderPetList();
 });
 
+//並び変えボタンをアクティブにするか
+function updateReorderButtonState() {
+    db.pets.count(count => {
+        const reorderBtn = document.getElementById('reorder-toggle-btn');
+        reorderBtn.disabled = count <= 1;
+    });
+}
+
 // ペット1匹の表示要素を作成
 function createPetElement(pet, feeds, pastDates, today) {
     // メインコンテナ
@@ -470,6 +478,9 @@ async function renderPetList() {
 
     // まとめてエサチェックボックス更新
     updateBulkCheckboxState();
+
+    // 並び変えボタンをアクティブにするか
+    updateReorderButtonState()
 }
 
 
@@ -673,6 +684,9 @@ function openAddModal() {
         const newElement = createPetElement(pet, feeds, pastDates, today);
         const container = document.getElementById('pet-list');
         container.appendChild(newElement);
+
+        // 並び変えボタンをアクティブにするか
+        updateReorderButtonState()
     });
 
     modal.style.display = 'flex';
