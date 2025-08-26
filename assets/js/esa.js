@@ -539,11 +539,49 @@ function openSettingsModal() {
 }
 
 // 編集モーダル
-function openEditModal(pet) {
+function openEditModal(pet, options = {}) {
+    // 初期表示タブ
+    const activeTab = options.activeTab || 'history';
+
     const modal = document.getElementById('edit-modal');
     const modalContent = modal.querySelector('.modal-content');
 
-    modalContent.innerHTML = ''; // 既存内容をクリア
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h2>ペットを編集</h2>
+            <button type="button" class="modal-close-btn" id="close-edit-btn">編集画面を閉じる</button>
+        </div>
+        <div class="tab-header">
+            <button class="tab-btn active" data-tab="info">基本情報</button>
+            <button class="tab-btn" data-tab="history">履歴編集</button>
+        </div>
+        <div class="tab-content" id="tab-info"></div>
+        <div class="tab-content" id="tab-history" style="display:none;"></div>
+    `;
+
+    // モーダル閉じるボタン
+    modalContent.querySelector('#close-edit-btn').addEventListener('click', closeModal);
+
+    // タブ切り替え
+    const tabButtons = modalContent.querySelectorAll('.tab-btn');
+    const tabContents = modalContent.querySelectorAll('.tab-content');
+
+    function switchTab(tabName) {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => {
+            c.style.display = c.id === `tab-${tabName}` ? 'block' : 'none';
+        });
+        const activeBtn = modalContent.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchTab(btn.dataset.tab);
+        });
+    });
+
+    switchTab(activeTab); // 初期表示タブを選択
 
     const form = document.createElement('form');
     form.innerHTML = `
@@ -568,7 +606,6 @@ function openEditModal(pet) {
         <label>
             最長<input type="number" name="idealMaxDays" value="${pet.idealMaxDays ?? ''}" min="1" style="width: 4em;">日に一回
         </label><br><br>
-        <button type="button" id="cancel-edit-btn">キャンセル</button>
         <button type="submit">これでOK</button>
     `;
 
@@ -627,12 +664,64 @@ function openEditModal(pet) {
         await updatePetElement(pet.id);
     });
 
-    // キャンセル → モーダルを閉じるだけ
-    form.querySelector('#cancel-edit-btn').addEventListener('click', () => {
-        closeModal();
-    });
+    modalContent.querySelector('#tab-info').appendChild(form);
 
-    modalContent.appendChild(form);
+    // 履歴編集タブ
+    (async () => {
+        const historyContainer = modalContent.querySelector('#tab-history');
+        const feeds = await db.feeds.where('petId').equals(pet.id).toArray();
+        feeds.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        const list = document.createElement('ul');
+        feeds.forEach(feed => {
+            const li = document.createElement('li');
+            const dateStr = new Date(feed.date).toLocaleDateString();
+            li.innerHTML = `
+            <span>${dateStr}</span>
+            <button data-id="${feed.id}">削除</button>
+        `;
+            list.appendChild(li);
+        });
+        historyContainer.appendChild(list);
+
+        // 削除処理
+        list.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = Number(btn.dataset.id);
+                await db.feeds.delete(id);
+                await updatePetElement(pet.id);
+                openEditModal(pet, { activeTab: 'history' });
+            });
+        });
+
+        // 日付追加フォーム
+        const addForm = document.createElement('form');
+        addForm.innerHTML = `
+        <input type="date" name="feedDate" required>
+        <button type="submit">追加</button>
+    `;
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = addForm.elements['feedDate'].value;
+            if (!date) return;
+
+            const exists = feeds.some(f => isSameDay(new Date(f.date), new Date(date)));
+            if (exists) {
+                alert('その日はすでに記録があります');
+                return;
+            }
+
+            await db.feeds.add({
+                petId: pet.id,
+                date: new Date(date)
+            });
+
+            await updatePetElement(pet.id);
+            openEditModal(pet, { activeTab: 'history' });
+        });
+        historyContainer.appendChild(addForm);
+    })();
+
     modal.style.display = 'flex';
 }
 
