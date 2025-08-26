@@ -483,6 +483,60 @@ async function renderPetList() {
     updateReorderButtonState()
 }
 
+// 設定モーダル
+function openSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    modalContent.innerHTML = '<h2>設定</h2><button type="button" id="close-settings-btn">閉じる</button><br><br>';
+
+    modalContent.querySelector('#close-settings-btn').addEventListener('click', closeModal);
+
+    // ペット削除UIを作る
+    db.pets.toArray().then(pets => {
+        if (pets.length === 0) {
+            modalContent.innerHTML += '<p>削除できるペットがいません。</p>';
+        } else {
+            const form = document.createElement('form');
+            form.innerHTML = `
+                <label>
+                    削除するペットを選択:
+                    <select id="delete-pet-select">
+                        ${pets.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                    </select>
+                </label>
+                <button type="submit">削除</button>
+            `;
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const select = form.querySelector('#delete-pet-select');
+                const petId = Number(select.value);
+
+                const confirmed = confirm('本当に削除しますか？');
+                if (confirmed) {
+                    // 関連するエサやり記録を削除
+                    await db.feeds
+                        .where('petId')
+                        .equals(petId)
+                        .delete();
+
+                    // ペット本体を削除
+                    await db.pets.delete(petId);
+
+                    // UI更新
+                    await renderPetList();
+                    updateReorderButtonState();
+                    closeModal();
+                }
+            });
+
+            modalContent.appendChild(form);
+        }
+    });
+
+    modal.style.display = 'flex';
+}
 
 // 編集モーダル
 function openEditModal(pet) {
@@ -584,7 +638,7 @@ function openEditModal(pet) {
 
 // モーダルを閉じる
 function closeModal() {
-    document.querySelectorAll('#edit-modal, #add-modal').forEach(modal => {
+    document.querySelectorAll('#settings-modal, #edit-modal, #add-modal').forEach(modal => {
         modal.style.display = 'none';
     });
 }
@@ -718,12 +772,4 @@ scheduleMidnightRefresh();
 document.getElementById('add-pet-btn').addEventListener('click', openAddModal);
 
 // 設定ボタンイベント
-document.getElementById('settings-btn').addEventListener('click', () => {
-    const modal = document.getElementById('settings-modal');
-    modal.style.display = 'flex';
-});
-
-document.getElementById('settings-close-btn').addEventListener('click', () => {
-    const modal = document.getElementById('settings-modal');
-    modal.style.display = 'none';
-});
+document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
