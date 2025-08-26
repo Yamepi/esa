@@ -18,6 +18,8 @@ body {
 #header-menu-container {
     max-width: 500px;
     margin-inline: auto;
+    display: grid;
+    grid-template-columns: 80px 1fr 100px;
 }
 
 #settings-btn {
@@ -27,6 +29,25 @@ body {
     cursor: pointer;
     background-color: #f1f1f1;
     padding: 15px;
+}
+
+#bulk-feed-checkbox-container {
+    grid-column: 3 / 4;
+    font-size: 0.6rem;
+    padding-top: 15px;
+    padding-right: 13px;
+    text-align: right;
+}
+
+#bulk-feed-checkbox-container label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#bulk-feed-checkbox-container label input[type="checkbox"] {
+    margin: 0;
+    vertical-align: middle;
 }
 
 main {
@@ -126,11 +147,13 @@ body.reorder-mode #reorder-toggle-btn {
 }
 
 .last-feed-days.ideal {
-    color: #28a745; /* 緑（理想） */
+    color: #28a745;
+    /* 緑（理想） */
 }
 
 .last-feed-days.too-late {
-    color: #d9534f; /* 赤（遅すぎ） */
+    color: #d9534f;
+    /* 赤（遅すぎ） */
     font-weight: bold;
 }
 
@@ -230,23 +253,41 @@ body.reorder-mode #reorder-toggle-btn {
 }
 
 /* 今日の餌やりのチェックボックス */
+#bulk-feed-checkbox,
 .today-feed-check {
     appearance: none;
     margin: 0;
     position: relative;
     width: 20px;
     height: 20px;
+    background-color: #f1f1f1;
     border: 2px solid #aaabbc;
     border-radius: 2px;
     cursor: pointer;
 }
 
+#bulk-feed-checkbox:indeterminate,
+.today-feed-check:indeterminate,
+#bulk-feed-checkbox:checked,
 .today-feed-check:checked {
     background-color: #F3A738;
     border: 2px solid #F3A738;
 }
 
+#bulk-feed-checkbox:indeterminate::after,
+.today-feed-check:indeterminate::after {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 14px;
+    height: 5px;
+    border-bottom: 4px solid #ffffff;
+    border-left: none;
+}
+
 /* 今日の餌やりのチェックマーク */
+#bulk-feed-checkbox:checked::after,
 .today-feed-check:checked::after {
     content: "";
     position: absolute;

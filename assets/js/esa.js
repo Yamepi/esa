@@ -343,6 +343,39 @@ async function updatePetElement(petId) {
     if (oldElement) {
         container.replaceChild(newElement, oldElement);
     }
+
+    // まとめてエサチェックボックス更新
+    updateBulkCheckboxState();
+}
+
+// まとめてエサチェックボックスの状態を更新する関数
+function updateBulkCheckboxState() {
+    const bulkCheckbox = document.getElementById('bulk-feed-checkbox');
+    if (!bulkCheckbox) return;
+
+    db.pets.toArray().then(async (pets) => {
+        const feeds = await db.feeds.toArray();
+        const today = new Date();
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        let checkedCount = 0;
+
+        for (const pet of pets) {
+            const hasFeed = feeds.some(f => f.petId === pet.id && isSameDay(new Date(f.date), todayDate));
+            if (hasFeed) checkedCount++;
+        }
+
+        if (checkedCount === pets.length && pets.length > 0) {
+            bulkCheckbox.checked = true;
+            bulkCheckbox.indeterminate = false;
+        } else if (checkedCount === 0) {
+            bulkCheckbox.checked = false;
+            bulkCheckbox.indeterminate = false;
+        } else {
+            bulkCheckbox.checked = false;
+            bulkCheckbox.indeterminate = true;
+        }
+    });
 }
 
 // ペット一覧を描画（初回 or 全体更新用）
@@ -362,16 +395,83 @@ async function renderPetList() {
     const container = document.getElementById('pet-list');
     container.innerHTML = '';
 
+    const headerMenu = document.getElementById('header-menu-container');
+
+    // 一旦まとめチェックがあるなら削除（再描画のたび）
+    const existingBulk = document.getElementById('bulk-feed-checkbox-container');
+    if (existingBulk) existingBulk.remove();
+
     if (pets.length === 0) {
         container.innerHTML = '<p>表示するペットがいません。</p>';
         return;
     }
 
+    // まとめてチェックボックス
+    const bulkContainer = document.createElement('div');
+    bulkContainer.id = 'bulk-feed-checkbox-container';
+
+    const bulkLabel = document.createElement('label');
+    const bulkCheckbox = document.createElement('input');
+    bulkCheckbox.type = 'checkbox';
+    bulkCheckbox.id = 'bulk-feed-checkbox';
+    bulkLabel.appendChild(document.createTextNode('まとめてエサ'));
+    bulkLabel.appendChild(bulkCheckbox);
+
+    bulkContainer.appendChild(bulkLabel);
+    headerMenu.appendChild(bulkContainer);
+
+    // チェック状態を初期化（今日すでに全員にエサやり済みか）
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const petIdsWithTodayFeed = feeds
+        .filter(f => isSameDay(new Date(f.date), todayDate))
+        .map(f => f.petId);
+
+    if (pets.every(pet => petIdsWithTodayFeed.includes(pet.id))) {
+        bulkCheckbox.checked = true;
+    }
+
+    // チェックボックスのイベント
+    bulkCheckbox.addEventListener('change', async (e) => {
+        const isChecked = e.target.checked;
+
+        // 最新のfeedsを取得
+        const freshFeeds = await db.feeds.toArray();
+        const today = new Date();
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        for (const pet of pets) {
+            const hasFeed = freshFeeds.some(f => f.petId === pet.id && isSameDay(new Date(f.date), todayDate));
+
+            if (isChecked) {
+                // まだ記録されていない場合のみ追加
+                if (!hasFeed) {
+                    await recordFeed(pet.id);
+                }
+            } else {
+                // 今日の記録があれば削除
+                if (hasFeed) {
+                    const feed = freshFeeds.find(f => f.petId === pet.id && isSameDay(new Date(f.date), todayDate));
+                    if (feed) {
+                        await db.feeds.delete(feed.id);
+                    }
+                }
+            }
+        }
+
+        // 再描画でチェック更新
+        await renderPetList();
+    });
+
+    // ペット一覧描画
     for (const pet of pets) {
         const petElement = createPetElement(pet, feeds, pastDates, today);
         container.appendChild(petElement);
     }
+
+    // まとめてエサチェックボックス更新
+    updateBulkCheckboxState();
 }
+
 
 // 編集モーダル
 function openEditModal(pet) {
