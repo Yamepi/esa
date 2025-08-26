@@ -107,6 +107,19 @@ body.reorder-mode #reorder-toggle-btn {
     margin-bottom: 2px;
 }
 
+.feed-days-unit {
+    font-size: 0.6rem;
+}
+
+.last-feed-days.ideal {
+    color: #28a745; /* 緑（理想） */
+}
+
+.last-feed-days.too-late {
+    color: #d9534f; /* 赤（遅すぎ） */
+    font-weight: bold;
+}
+
 .feed-history {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(0, 1fr));

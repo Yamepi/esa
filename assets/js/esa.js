@@ -2,7 +2,7 @@
 const db = new Dexie('esaDB');
 
 db.version(1).stores({
-    pets: '++id, name, type, image, order',
+    pets: '++id, name, type, image, order, idealMinDays, idealMaxDays',
     feeds: '++id, petId, date',
     meta: '&key, value'
 });
@@ -180,9 +180,36 @@ function createPetElement(pet, feeds, pastDates, today) {
         if (diffDays === 1) {
             lastFeedDays.textContent = 'きのう';
         } else {
-            lastFeedDays.textContent = `${diffDays}日前`;
+            const numberSpan = document.createElement('span');
+            numberSpan.className = 'feed-days-number';
+            numberSpan.textContent = diffDays;
+
+            const unitSpan = document.createElement('span');
+            unitSpan.className = 'feed-days-unit';
+            unitSpan.textContent = '日前';
+
+            lastFeedDays.appendChild(numberSpan);
+            lastFeedDays.appendChild(unitSpan);
         }
 
+        // エサやり頻度の判定
+        let statusClass = '';
+        if (typeof pet.idealMinDays === 'number' && diffDays < pet.idealMinDays) {
+            statusClass = 'too-soon';
+        } else if (typeof pet.idealMaxDays === 'number' && diffDays > pet.idealMaxDays) {
+            statusClass = 'too-late';
+        } else if (
+            typeof pet.idealMinDays === 'number' ||
+            typeof pet.idealMaxDays === 'number'
+        ) {
+            statusClass = 'ideal';
+        }
+
+        if (statusClass) {
+            lastFeedDays.classList.add(statusClass);
+        }
+
+        // 要素を追加
         lastFeedDiv.appendChild(lastFeedLabel);
         lastFeedDiv.appendChild(lastFeedDays);
 
@@ -369,6 +396,13 @@ function openEditModal(pet) {
             ${pet.image ? `<img src="${pet.image}" width="32" height="32" alt="現在の画像"><br>` : '（画像なし）'}
         </div>
         <button type="button" id="delete-image-btn">画像を削除</button><br><br>
+        <p>餌やり頻度(任意)</p>
+        <label>
+            最短<input type="number" name="idealMinDays" value="${pet.idealMinDays ?? ''}" min="1" style="width: 4em;">日に一回
+        </label><br>
+        <label>
+            最長<input type="number" name="idealMaxDays" value="${pet.idealMaxDays ?? ''}" min="1" style="width: 4em;">日に一回
+        </label><br><br>
         <button type="button" id="cancel-edit-btn">キャンセル</button>
         <button type="submit">これでOK</button>
     `;
@@ -416,6 +450,13 @@ function openEditModal(pet) {
             updatedFields.image = null;
         }
 
+        // エサやり間隔
+        const idealMinInput = form.elements['idealMinDays'].value;
+        const idealMaxInput = form.elements['idealMaxDays'].value;
+
+        updatedFields.idealMinDays = idealMinInput === '' ? null : parseInt(idealMinInput, 10);
+        updatedFields.idealMaxDays = idealMaxInput === '' ? null : parseInt(idealMaxInput, 10);
+
         await db.pets.update(pet.id, updatedFields);
         closeModal();
         await updatePetElement(pet.id);
@@ -456,6 +497,13 @@ function openAddModal() {
             </label><br>
             <div id="current-image-preview" style="margin: 8px 0;">（画像なし）</div>
             <button type="button" id="delete-image-btn">画像を削除</button><br><br>
+            <p>餌やり頻度(任意)</p>
+            <label>
+                最短<input type="number" name="idealMinDays" value="" min="1" style="width: 4em;">日に一回
+            </label><br>
+            <label>
+                最長<input type="number" name="idealMaxDays" value="" min="1" style="width: 4em;">日に一回
+            </label><br><br>
             <button type="button" id="cancel-add-btn">キャンセル</button>
             <button type="submit">これでOK</button>
         </form>
@@ -496,6 +544,16 @@ function openAddModal() {
         const newPet = { name, type, order: petCount };
         if (newImage) {
             newPet.image = newImage;
+        }
+
+        const idealMinInput = form.elements['idealMinDays'].value;
+        const idealMaxInput = form.elements['idealMaxDays'].value;
+
+        if (idealMinInput !== '') {
+            newPet.idealMinDays = parseInt(idealMinInput, 10);
+        }
+        if (idealMaxInput !== '') {
+            newPet.idealMaxDays = parseInt(idealMaxInput, 10);
         }
 
         const petId = await db.pets.add(newPet);
