@@ -403,11 +403,9 @@ async function renderPetList() {
     const container = document.getElementById('pet-list');
     container.innerHTML = '';
 
-    const headerMenu = document.getElementById('header-menu-container');
-
     // まとめてチェックボックス
-    const bulkContainer = document.createElement('div');
-    bulkContainer.id = 'bulk-feed-checkbox-container';
+    const bulkContainer = document.getElementById('bulk-feed-checkbox-container');
+    bulkContainer.innerHTML = '';
 
     const bulkLabel = document.createElement('label');
     const bulkCheckbox = document.createElement('input');
@@ -417,7 +415,6 @@ async function renderPetList() {
     bulkLabel.appendChild(bulkCheckbox);
 
     bulkContainer.appendChild(bulkLabel);
-    headerMenu.appendChild(bulkContainer);
 
     // チェック状態を初期化（今日すでに全員にエサやり済みか）
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
