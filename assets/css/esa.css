@@ -15,6 +15,20 @@ body {
         sans-serif;
 }
 
+#header-menu-container {
+    max-width: 500px;
+    margin-inline: auto;
+}
+
+#settings-btn {
+    all: unset;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    background-color: #f1f1f1;
+    padding: 15px;
+}
+
 main {
     padding: 10px;
 }
@@ -268,6 +282,7 @@ body.reorder-mode #reorder-toggle-btn {
     width: 100%;
 }
 
+#settings-modal,
 #edit-modal,
 #add-modal {
     display: none;

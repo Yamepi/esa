@@ -602,3 +602,14 @@ scheduleMidnightRefresh();
 
 // 追加ボタンイベント
 document.getElementById('add-pet-btn').addEventListener('click', openAddModal);
+
+// 設定ボタンイベント
+document.getElementById('settings-btn').addEventListener('click', () => {
+    const modal = document.getElementById('settings-modal');
+    modal.style.display = 'flex';
+});
+
+document.getElementById('settings-close-btn').addEventListener('click', () => {
+    const modal = document.getElementById('settings-modal');
+    modal.style.display = 'none';
+});
