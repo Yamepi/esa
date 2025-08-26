@@ -410,7 +410,7 @@ async function renderPetList() {
     if (existingBulk) existingBulk.remove();
 
     if (pets.length === 0) {
-        container.innerHTML = '<p>表示するペットがいません。</p>';
+        container.innerHTML = '<p id="empty-message">表示するペットがいません。</p>';
         return;
     }
 
@@ -738,6 +738,10 @@ function openAddModal() {
         const newElement = createPetElement(pet, feeds, pastDates, today);
         const container = document.getElementById('pet-list');
         container.appendChild(newElement);
+
+        // 「表示するペットがいません。」メッセージがあれば消す
+        const emptyMsg = document.getElementById('empty-message');
+        if (emptyMsg) emptyMsg.remove();
 
         // 並び変えボタンをアクティブにするか
         updateReorderButtonState()
