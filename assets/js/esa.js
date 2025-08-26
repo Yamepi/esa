@@ -533,6 +533,67 @@ function openSettingsModal() {
 
             modalContent.appendChild(form);
         }
+
+        // エクスポートボタン
+        const exportBtn = document.createElement('button');
+        exportBtn.textContent = 'データを書き出す（エクスポート）';
+        exportBtn.style.display = 'block';
+        exportBtn.style.marginTop = '20px';
+        exportBtn.addEventListener('click', async () => {
+            const pets = await db.pets.toArray();
+            const feeds = await db.feeds.toArray();
+            const data = { pets, feeds };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pets-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        modalContent.appendChild(exportBtn);
+
+        // インポート用ファイル選択
+        const importLabel = document.createElement('label');
+        importLabel.textContent = 'データを読み込む（インポート）: ';
+        importLabel.style.display = 'block';
+        importLabel.style.marginTop = '20px';
+
+        const importInput = document.createElement('input');
+        importInput.type = 'file';
+        importInput.accept = 'application/json';
+
+        importLabel.appendChild(importInput);
+        modalContent.appendChild(importLabel);
+
+        importInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    const data = JSON.parse(reader.result);
+                    if (!data.pets || !data.feeds) {
+                        alert('不正なデータ形式です');
+                        return;
+                    }
+                    const confirmed = confirm('インポートすると現在のデータは全て上書きされます。本当によろしいですか？');
+                    if (!confirmed) return;
+                    await db.pets.clear();
+                    await db.feeds.clear();
+                    await db.pets.bulkAdd(data.pets);
+                    await db.feeds.bulkAdd(data.feeds);
+                    alert('インポート成功しました！');
+                    await renderPetList();
+                    updateReorderButtonState();
+                    closeModal();
+                } catch {
+                    alert('データの読み込みに失敗しました');
+                }
+            };
+            reader.readAsText(file);
+        });
     });
 
     modal.style.display = 'flex';
