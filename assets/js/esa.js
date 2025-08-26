@@ -669,6 +669,72 @@ function openEditModal(pet, options = {}) {
     // 履歴編集タブ
     (async () => {
         const historyContainer = modalContent.querySelector('#tab-history');
+
+        // かんたん日付追加フォーム
+        const quickAddContainer = document.createElement('div');
+        quickAddContainer.innerHTML = `
+            <label>
+                <select id="quick-days-select">
+                    <option value="1">昨日</option>
+                    <option value="2">おととい</option>
+                    <option value="3">3日前</option>
+                </select>
+            </label>
+            <button type="button" id="quick-add-btn">に餌やりした</button>
+        `;
+        historyContainer.appendChild(quickAddContainer);
+
+        // かんたん日付追加
+        quickAddContainer.querySelector('#quick-add-btn').addEventListener('click', async () => {
+            const days = Number(quickAddContainer.querySelector('#quick-days-select').value);
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() - days);
+
+            const currentFeeds = await db.feeds.where('petId').equals(pet.id).toArray();
+            const exists = currentFeeds.some(f => isSameDay(new Date(f.date), targetDate));
+
+            if (exists) {
+                alert('その日はすでに記録があります');
+                return;
+            }
+
+            await db.feeds.add({
+                petId: pet.id,
+                date: targetDate
+            });
+
+            await updatePetElement(pet.id);
+            openEditModal(pet, { activeTab: 'history' });
+        });
+
+        // 日付追加フォーム
+        const addForm = document.createElement('form');
+        addForm.innerHTML = `
+            <input type="date" name="feedDate" required>
+            <button type="submit">追加</button>
+        `;
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = addForm.elements['feedDate'].value;
+            if (!date) return;
+
+            const exists = feeds.some(f => isSameDay(new Date(f.date), new Date(date)));
+            if (exists) {
+                alert('その日はすでに記録があります');
+                return;
+            }
+
+            await db.feeds.add({
+                petId: pet.id,
+                date: new Date(date)
+            });
+
+            await updatePetElement(pet.id);
+            openEditModal(pet, { activeTab: 'history' });
+        });
+        historyContainer.appendChild(addForm);
+
+        // 履歴
         const feeds = await db.feeds.where('petId').equals(pet.id).toArray();
         feeds.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -693,33 +759,6 @@ function openEditModal(pet, options = {}) {
                 openEditModal(pet, { activeTab: 'history' });
             });
         });
-
-        // 日付追加フォーム
-        const addForm = document.createElement('form');
-        addForm.innerHTML = `
-        <input type="date" name="feedDate" required>
-        <button type="submit">追加</button>
-    `;
-        addForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const date = addForm.elements['feedDate'].value;
-            if (!date) return;
-
-            const exists = feeds.some(f => isSameDay(new Date(f.date), new Date(date)));
-            if (exists) {
-                alert('その日はすでに記録があります');
-                return;
-            }
-
-            await db.feeds.add({
-                petId: pet.id,
-                date: new Date(date)
-            });
-
-            await updatePetElement(pet.id);
-            openEditModal(pet, { activeTab: 'history' });
-        });
-        historyContainer.appendChild(addForm);
     })();
 
     modal.style.display = 'flex';
