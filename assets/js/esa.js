@@ -405,15 +405,6 @@ async function renderPetList() {
 
     const headerMenu = document.getElementById('header-menu-container');
 
-    // 一旦まとめチェックがあるなら削除（再描画のたび）
-    const existingBulk = document.getElementById('bulk-feed-checkbox-container');
-    if (existingBulk) existingBulk.remove();
-
-    if (pets.length === 0) {
-        container.innerHTML = '<p id="empty-message">表示するペットがいません。</p>';
-        return;
-    }
-
     // まとめてチェックボックス
     const bulkContainer = document.createElement('div');
     bulkContainer.id = 'bulk-feed-checkbox-container';
@@ -436,6 +427,13 @@ async function renderPetList() {
 
     if (pets.every(pet => petIdsWithTodayFeed.includes(pet.id))) {
         bulkCheckbox.checked = true;
+    }
+
+    // ペットがいなければまとめてチェックは無効化
+    if (pets.length === 0) {
+        container.innerHTML = '<p id="empty-message">表示するペットがいません。</p>';
+        bulkCheckbox.disabled = true;
+        return;
     }
 
     // チェックボックスのイベント
@@ -951,6 +949,7 @@ async function startApp() {
 }
 startApp();
 scheduleMidnightRefresh();
+updateReorderButtonState();
 
 // 追加ボタンイベント
 document.getElementById('add-pet-btn').addEventListener('click', openAddModal);
