@@ -488,14 +488,29 @@ function openSettingsModal() {
     const modal = document.getElementById('settings-modal');
     const modalContent = modal.querySelector('.modal-content');
 
-    modalContent.innerHTML = '<h2>設定</h2><button type="button" id="close-settings-btn">閉じる</button><br><br>';
+    // モーダルの中身
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h2>設定</h2>
+            <button type="button" id="close-settings-btn">閉じる</button>
+        </div>
+        <div id="delete-pet-section"></div>
+        <button id="export-btn" style="margin-top: 20px;">データを書き出す（エクスポート）</button>
+        <label style="display:block; margin-top:20px;">
+            データを読み込む（インポート）:
+            <input type="file" id="import-input" accept="application/json">
+        </label>
+    `;
 
+    // 閉じるボタンにイベントリスナーをセット
     modalContent.querySelector('#close-settings-btn').addEventListener('click', closeModal);
 
-    // ペット削除UIを作る
+    // ペット削除UI作成（非同期データ取得後）
     db.pets.toArray().then(pets => {
+        const deleteSection = modalContent.querySelector('#delete-pet-section');
+
         if (pets.length === 0) {
-            modalContent.innerHTML += '<p>削除できるペットがいません。</p>';
+            deleteSection.textContent = '削除できるペットがいません。';
         } else {
             const form = document.createElement('form');
             form.innerHTML = `
@@ -508,92 +523,68 @@ function openSettingsModal() {
                 <button type="submit">削除</button>
             `;
 
-            form.addEventListener('submit', async (e) => {
+            form.addEventListener('submit', async e => {
                 e.preventDefault();
-                const select = form.querySelector('#delete-pet-select');
-                const petId = Number(select.value);
+                const petId = Number(form.querySelector('#delete-pet-select').value);
+                if (!confirm('本当に削除しますか？')) return;
 
-                const confirmed = confirm('本当に削除しますか？');
-                if (confirmed) {
-                    // 関連するエサやり記録を削除
-                    await db.feeds
-                        .where('petId')
-                        .equals(petId)
-                        .delete();
-
-                    // ペット本体を削除
-                    await db.pets.delete(petId);
-
-                    // UI更新
-                    await renderPetList();
-                    updateReorderButtonState();
-                    closeModal();
-                }
+                await db.feeds.where('petId').equals(petId).delete();
+                await db.pets.delete(petId);
+                await renderPetList();
+                updateReorderButtonState();
+                closeModal();
             });
 
-            modalContent.appendChild(form);
+            deleteSection.appendChild(form);
         }
+    });
 
-        // エクスポートボタン
-        const exportBtn = document.createElement('button');
-        exportBtn.textContent = 'データを書き出す（エクスポート）';
-        exportBtn.style.display = 'block';
-        exportBtn.style.marginTop = '20px';
-        exportBtn.addEventListener('click', async () => {
-            const pets = await db.pets.toArray();
-            const feeds = await db.feeds.toArray();
-            const data = { pets, feeds };
-            const jsonStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'pets-data.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
-        modalContent.appendChild(exportBtn);
+    // エクスポート処理
+    modalContent.querySelector('#export-btn').addEventListener('click', async () => {
+        const pets = await db.pets.toArray();
+        const feeds = await db.feeds.toArray();
+        const data = { pets, feeds };
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
 
-        // インポート用ファイル選択
-        const importLabel = document.createElement('label');
-        importLabel.textContent = 'データを読み込む（インポート）: ';
-        importLabel.style.display = 'block';
-        importLabel.style.marginTop = '20px';
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pets-data.json';
+        a.click();
 
-        const importInput = document.createElement('input');
-        importInput.type = 'file';
-        importInput.accept = 'application/json';
+        URL.revokeObjectURL(url);
+    });
 
-        importLabel.appendChild(importInput);
-        modalContent.appendChild(importLabel);
+    // インポート処理
+    modalContent.querySelector('#import-input').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        importInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async () => {
-                try {
-                    const data = JSON.parse(reader.result);
-                    if (!data.pets || !data.feeds) {
-                        alert('不正なデータ形式です');
-                        return;
-                    }
-                    const confirmed = confirm('インポートすると現在のデータは全て上書きされます。本当によろしいですか？');
-                    if (!confirmed) return;
-                    await db.pets.clear();
-                    await db.feeds.clear();
-                    await db.pets.bulkAdd(data.pets);
-                    await db.feeds.bulkAdd(data.feeds);
-                    alert('インポート成功しました！');
-                    await renderPetList();
-                    updateReorderButtonState();
-                    closeModal();
-                } catch {
-                    alert('データの読み込みに失敗しました');
+        const reader = new FileReader();
+        reader.onload = async () => {
+            try {
+                const data = JSON.parse(reader.result);
+                if (!data.pets || !data.feeds) {
+                    alert('不正なデータ形式です');
+                    return;
                 }
-            };
-            reader.readAsText(file);
-        });
+                if (!confirm('インポートすると現在のデータは全て上書きされます。本当によろしいですか？')) return;
+
+                await db.pets.clear();
+                await db.feeds.clear();
+                await db.pets.bulkAdd(data.pets);
+                await db.feeds.bulkAdd(data.feeds);
+
+                alert('インポート成功しました！');
+                await renderPetList();
+                updateReorderButtonState();
+                closeModal();
+            } catch {
+                alert('データの読み込みに失敗しました');
+            }
+        };
+        reader.readAsText(file);
     });
 
     modal.style.display = 'flex';
