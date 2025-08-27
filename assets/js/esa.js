@@ -518,7 +518,7 @@ function openSettingsModal() {
     modalContent.innerHTML = `
         <div class="modal-header">
             <h2>設定</h2>
-            <button type="button" id="close-settings-btn">閉じる</button>
+            <button type="button" id="close-settings-btn">X</button>
         </div>
         <div id="delete-pet-section"></div>
         <button id="export-btn" style="margin-top: 20px;">データを書き出す（エクスポート）</button>
@@ -626,12 +626,12 @@ function openEditModal(pet, options = {}) {
 
     modalContent.innerHTML = `
         <div class="modal-header">
-            <h2>ペットを編集</h2>
-            <button type="button" class="modal-close-btn" id="close-edit-btn">編集画面を閉じる</button>
+            <h2>編集</h2>
+            <button type="button" class="modal-close-btn" id="close-edit-btn">X</button>
         </div>
         <div class="tab-header">
-            <button class="tab-btn active" data-tab="info">基本情報</button>
-            <button class="tab-btn" data-tab="history">履歴編集</button>
+            <button class="tab-btn active" data-tab="info">ペットの情報</button>
+            <button class="tab-btn" data-tab="history">エサりれき</button>
         </div>
         <div class="tab-content" id="tab-info"></div>
         <div class="tab-content" id="tab-history" style="display:none;"></div>
@@ -647,7 +647,7 @@ function openEditModal(pet, options = {}) {
     function switchTab(tabName) {
         tabButtons.forEach(b => b.classList.remove('active'));
         tabContents.forEach(c => {
-            c.style.display = c.id === `tab-${tabName}` ? 'block' : 'none';
+            c.style.display = c.id === `tab-${tabName}` ? 'flex' : 'none';
         });
         const activeBtn = modalContent.querySelector(`.tab-btn[data-tab="${tabName}"]`);
         if (activeBtn) activeBtn.classList.add('active');
@@ -826,8 +826,7 @@ function openEditModal(pet, options = {}) {
         // 日付追加フォーム
         const addForm = document.createElement('form');
         addForm.innerHTML = `
-            <input type="date" name="feedDate" required>
-            <button type="submit">追加</button>
+            日付指定<input type="date" name="feedDate"><button type="submit" id="feed-day-submit-btn">エサやりした</button>
         `;
         addForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -855,12 +854,13 @@ function openEditModal(pet, options = {}) {
         feeds.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         const list = document.createElement('ul');
+        list.id = 'history-list';
         feeds.forEach(feed => {
             const li = document.createElement('li');
             const dateStr = new Date(feed.date).toLocaleDateString();
             li.innerHTML = `
             <span>${dateStr}</span>
-            <button data-id="${feed.id}">削除</button>
+            <button class="delete-history-btn" data-id="${feed.id}">削除</button>
         `;
             list.appendChild(li);
         });
@@ -893,7 +893,10 @@ function openAddModal() {
     const modalContent = modal.querySelector('.modal-content');
 
     modalContent.innerHTML = `
-        <h2>ペットを追加</h2>
+        <div class="modal-header">
+            <h2>ペットを追加</h2>
+            <button type="button" class="modal-close-btn" id="close-btn">X</button>
+        </div>
         <form id="add-form">
             <label>
                 名前<input type="text" name="name" required>
@@ -965,6 +968,7 @@ function openAddModal() {
     });
 
     // キャンセル
+    modalContent.querySelector('#close-btn').addEventListener('click', closeModal);
     form.querySelector('#cancel-add-btn').addEventListener('click', closeModal);
 
     // 送信で保存＆描画

@@ -4,6 +4,7 @@
     --modal-bg-color: #fafafa;
     --main-text-color: #333;
     --sub-text-color: #555;
+    --cal-text-color: #888;
     --main-check-color: #F3A738;
     --main-check-mark-color: #eee;
     --sub-check-color: #aaabbc;
@@ -161,7 +162,7 @@ body.reorder-mode #reorder-toggle-btn {
 }
 
 body.reorder-mode .edit-pet-btn {
- display: none;
+    display: none;
 }
 
 .pet-image {
@@ -263,6 +264,7 @@ body.reorder-mode .edit-pet-btn {
     position: relative;
     display: inline-block;
     top: 20px;
+    color: var(--cal-text-color);
 }
 
 .has-feed .month {
@@ -282,7 +284,7 @@ body.reorder-mode .edit-pet-btn {
     left: 8px;
     width: 1px;
     height: 18px;
-    background-color: var(--main-text-color);
+    background-color: var(--cal-text-color);
     transform: rotate(45deg);
 }
 
@@ -301,6 +303,7 @@ body.reorder-mode .edit-pet-btn {
     display: flex;
     flex-direction: column;
     font-size: 0.8rem;
+    color: var(--cal-text-color);
 }
 
 .date-label .month {
@@ -421,8 +424,8 @@ body.reorder-mode .edit-pet-btn {
 
 /* モーダル共通スタイル */
 .modal-content {
-    width: 480px;
-    padding: 10px;
+    width: 500px;
+    margin: 0px 10px;
 }
 
 .modal-content input {
@@ -446,6 +449,7 @@ body.reorder-mode .edit-pet-btn {
     padding: 5px 7px;
 }
 
+#tab-history,
 #add-form,
 #edit-form {
     display: flex;
@@ -466,6 +470,9 @@ body.reorder-mode .edit-pet-btn {
     width: 50px;
 }
 
+#quick-add-btn,
+#feed-day-submit-btn,
+.delete-history-btn,
 .cancel-btn,
 .submit-btn {
     outline: none;
@@ -475,6 +482,36 @@ body.reorder-mode .edit-pet-btn {
     margin: 0;
     padding: 6px 8px;
     font-size: 0.8rem;
+}
+
+#feed-day-submit-btn,
+#quick-add-btn {
+    background-color: var(--submit-button-color);
+    border: 1px solid var(--submit-button-color);
+    color: white;
+}
+
+#history-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    gap: 15px;
+}
+
+#history-list li:nth-child(odd) {
+    background-color: var(--main-bg-color);
+}
+
+#history-list span {
+    flex-grow: 1;
+    white-space: nowrap;
+}
+
+.delete-history-btn {
+    background-color: var(--modal-bg-color);
+    border: 1px solid #f53636;
+    color: #f53636;
 }
 
 .cancel-btn {
@@ -487,6 +524,56 @@ body.reorder-mode .edit-pet-btn {
     background-color: var(--submit-button-color);
     border: 1px solid var(--submit-button-color);
     color: white;
+}
+
+/* 設定モーダル */
+.modal-header {
+    display: grid;
+    grid-template-columns: 1fr 50px;
+    padding-bottom: 15px;
+}
+
+.modal-header h2 {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+}
+
+.modal-header button {
+    all: unset;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    background-color: var(--main-border-color);
+    color: white;
+    padding: 15px;
+}
+
+/* 編集モーダル：タブ */
+.tab-header {
+    display: flex;
+    border-bottom: 1px solid var(--main-border-color);
+    margin-bottom: 15px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--sub-text-color);
+}
+
+.tab-btn.active {
+    border-bottom: 2px solid var(--submit-button-color);
+    color: var(--submit-button-color);
+}
+
+/* 編集モーダル：履歴 */
+#quick-days-select {
+    font-size: 2rem;
 }
 
 /* 画像アップロード */
