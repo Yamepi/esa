@@ -1,11 +1,26 @@
+:root {
+    --main-bg-color: #ddd;
+    --sub-bg-color: #eee;
+    --modal-bg-color: #fafafa;
+    --main-text-color: #333;
+    --sub-text-color: #555;
+    --main-check-color: #F3A738;
+    --main-check-mark-color: #eee;
+    --sub-check-color: #aaabbc;
+    --sub-check-mark-color: #eee;
+    --main-border-color: #aaabbc;
+    --reorder-button-color: #F3A738;
+    --submit-button-color: #2c7ee0;
+}
+
 html {
     font-size: 16px;
     /* 基準サイズ */
 }
 
 body {
-    color: #222;
-    background-color: #e7e3d7;
+    color: var(--sub-text-color);
+    background-color: var(--main-bg-color);
     font-size: 1rem;
     /* 基準サイズを1とする単位 */
     font-family:
@@ -19,7 +34,7 @@ body {
     max-width: 500px;
     margin-inline: auto;
     display: grid;
-    grid-template-columns: 80px 1fr 100px;
+    grid-template-columns: 50px 1fr 100px;
 }
 
 #settings-btn {
@@ -27,7 +42,7 @@ body {
     display: inline-block;
     text-align: center;
     cursor: pointer;
-    background-color: #f1f1f1;
+    background-color: var(--sub-bg-color);
     padding: 15px;
 }
 
@@ -63,6 +78,11 @@ main {
     gap: 10px;
 }
 
+/* ペットがいない時のメッセージ */
+#empty-message {
+    margin: 10px;
+}
+
 /* ツールエリア */
 #tool-container {
     display: flex;
@@ -79,8 +99,15 @@ main {
     display: inline-block;
     text-align: center;
     cursor: pointer;
-    background-color: #f1f1f1;
-    padding: 15px;
+    background-color: var(--sub-bg-color);
+}
+
+#add-pet-btn {
+    padding: 15px 15px;
+}
+
+#reorder-toggle-btn {
+    padding: 15px 11px;
 }
 
 /* 無効な並び替えボタン */
@@ -91,12 +118,12 @@ main {
 
 /* 並び替え操作中のスタイル */
 body.reorder-mode #reorder-toggle-btn {
-    background-color: #F3A738;
+    background-color: var(--reorder-button-color);
 }
 
 /* ペットの情報（グリッドレイアウト） */
 .pet-entry {
-    background-color: #f1f1f1;
+    background-color: var(--sub-bg-color);
     padding: 5px;
     display: grid;
     grid-template-rows: 24px 50px 50px;
@@ -126,15 +153,18 @@ body.reorder-mode #reorder-toggle-btn {
     grid-column: 3 / 4;
     display: flex;
     flex-direction: column;
+    padding-left: 5px;
 }
 
 .pet-type {
     font-size: 1rem;
+    padding-top: 5px;
 }
 
 .pet-name {
     font-size: 1.5rem;
     font-weight: bold;
+    padding-top: 5px;
 }
 
 .last-feed {
@@ -183,9 +213,9 @@ body.reorder-mode #reorder-toggle-btn {
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2px solid #aaabbc;
+    border: 2px solid var(--sub-check-color);
     border-radius: 2px;
-    background-color: #aaabbc;
+    background-color: var(--sub-check-color);
     margin-bottom: 3px;
 }
 
@@ -197,8 +227,8 @@ body.reorder-mode #reorder-toggle-btn {
     left: 1px;
     width: 14px;
     height: 8px;
-    border-left: 4px solid #fff;
-    border-bottom: 4px solid #fff;
+    border-left: 4px solid var(--sub-check-mark-color);
+    border-bottom: 4px solid var(--sub-check-mark-color);
     transform: rotate(-45deg);
 }
 
@@ -227,7 +257,7 @@ body.reorder-mode #reorder-toggle-btn {
     left: 8px;
     width: 1px;
     height: 18px;
-    background-color: #222;
+    background-color: var(--main-text-color);
     transform: rotate(45deg);
 }
 
@@ -237,7 +267,7 @@ body.reorder-mode #reorder-toggle-btn {
     display: inline-block;
     width: 5px;
     height: 5px;
-    background-color: #aaabbc;
+    background-color: var(--main-border-color);
     border-radius: 50%;
 }
 
@@ -266,8 +296,8 @@ body.reorder-mode #reorder-toggle-btn {
     position: relative;
     width: 20px;
     height: 20px;
-    background-color: #f1f1f1;
-    border: 2px solid #aaabbc;
+    background-color: var(--sub-bg-color);
+    border: 2px solid var(--sub-check-color);
     border-radius: 2px;
     cursor: pointer;
 }
@@ -276,8 +306,10 @@ body.reorder-mode #reorder-toggle-btn {
 .today-feed-check:indeterminate,
 #bulk-feed-checkbox:checked,
 .today-feed-check:checked {
-    background-color: #F3A738;
-    border: 2px solid #F3A738;
+    background-color: var(--main-check-color);
+    ;
+    border: 2px solid var(--main-check-color);
+    ;
 }
 
 #bulk-feed-checkbox:indeterminate::after,
@@ -288,7 +320,7 @@ body.reorder-mode #reorder-toggle-btn {
     left: 1px;
     width: 14px;
     height: 5px;
-    border-bottom: 4px solid #ffffff;
+    border-bottom: 4px solid var(--main-check-mark-color);
     border-left: none;
 }
 
@@ -301,8 +333,8 @@ body.reorder-mode #reorder-toggle-btn {
     left: 1px;
     width: 14px;
     height: 8px;
-    border-bottom: 4px solid #ffffff;
-    border-left: 4px solid #ffffff;
+    border-bottom: 4px solid var(--main-check-mark-color);
+    border-left: 4px solid var(--main-check-mark-color);
     transform: rotate(-45deg);
 }
 
@@ -313,8 +345,8 @@ body.reorder-mode #reorder-toggle-btn {
     position: relative;
     width: 20px;
     height: 20px;
-    background-color: #f1f1f1;
-    border: 2px solid #aaabbc;
+    background-color: var(--sub-bg-color);
+    border: 2px solid var(--sub-check-color);
     border-radius: 2px;
     cursor: default;
     opacity: 0.5;
@@ -343,8 +375,8 @@ body.reorder-mode #reorder-toggle-btn {
     display: inline-block;
     text-align: center;
     cursor: pointer;
-    color: #F3A738;
-    background-color: #fff;
+    background-color: var(--sub-bg-color);
+    border-left: 2px solid var(--reorder-button-color);
     width: 100%;
 }
 
@@ -357,17 +389,137 @@ body.reorder-mode #reorder-toggle-btn {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #ddd;
+    background-color: var(--modal-bg-color);
     z-index: 1000;
-    align-items: center;
     justify-content: center;
 }
 
+/* モーダル共通スタイル */
 .modal-content {
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 500px;
-    text-align: center;
+    width: 480px;
+    padding: 10px;
+}
+
+.modal-content input {
+    outline: none;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: var(--main-text-color);
+    background-color: var(--modal-bg-color);
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    margin: 0 5px;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+}
+
+.modal-content input:focus {
+    outline: none;
+    box-shadow: none;
+    box-sizing: border-box;
+    border: 2px solid var(--submit-button-color);
+    padding: 5px 7px;
+}
+
+.cancel-btn,
+.submit-btn {
+    outline: none;
+    box-shadow: none;
+    box-sizing: border-box;
+    border-radius: 6px;
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+}
+
+.cancel-btn {
+    background-color: var(--sub-bg-color);
+    border: 1px solid var(--main-border-color);
+}
+
+.submit-btn {
+    background-color: var(--submit-button-color);
+    border: 1px solid var(--submit-button-color);
+    color: white;
+}
+
+/* 画像アップロード */
+.image-upload-container {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--main-border-color);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: var(--modal-bg-color);
+}
+
+.image-upload-container.uploaded {
+  border: 1px solid var(--main-border-color);
+}
+
+/* プラスアイコン*/
+.plus-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.plus-icon::before,
+.plus-icon::after {
+  content: '';
+  position: absolute;
+  background-color: var(--main-border-color);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.plus-icon::before {
+  width: 16px;
+  height: 2px;
+}
+
+.plus-icon::after {
+  width: 2px;
+  height: 16px;
+}
+
+/* バツアイコン */
+.delete-button {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  background: rgba(64, 64, 64, 0.5);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: none;
+  z-index: 10;
+  padding: 0;
+}
+
+.delete-button::before,
+.delete-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 2px;
+  background: white;
+  transform-origin: center;
+}
+
+.delete-button::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.delete-button::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }

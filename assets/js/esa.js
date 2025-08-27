@@ -12,8 +12,8 @@ async function initializeOnce() {
     const initialized = await db.meta.get('isInitialized');
     if (!initialized) {
         await db.pets.add({
-            name: 'ペット1（名前を入力してね）',
-            type: 'ペットの種類を入力してね',
+            name: 'ペット1',
+            type: 'ペットの種類',
             order: 0
         });
         await db.meta.put({ key: 'isInitialized', value: true });
@@ -51,6 +51,21 @@ function resizeImageToBase64(file, width = 32, height = 32) {
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
+}
+
+// 全角数字から半角数字に変換する関数
+function toHalfWidthDigits(value) {
+    return value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+}
+
+// エスケープ処理
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 // エサやり記録追加
@@ -156,8 +171,8 @@ function createPetElement(pet, feeds, pastDates, today) {
     const info = document.createElement('div');
     info.classList.add('pet-info');
     info.innerHTML = `
-        <span class="pet-type">${pet.type}</span>
-        <span class="pet-name">${pet.name}</span>
+        <span class="pet-type">${escapeHtml(pet.type)}</span>
+        <span class="pet-name">${escapeHtml(pet.name)}</span>
     `;
     div.appendChild(info);
 
@@ -512,7 +527,7 @@ function openSettingsModal() {
                 <label>
                     削除するペットを選択:
                     <select id="delete-pet-select">
-                        ${pets.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                        ${pets.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
                     </select>
                 </label>
                 <button type="submit">削除</button>
@@ -637,43 +652,83 @@ function openEditModal(pet, options = {}) {
             名前: <input type="text" name="name" value="${pet.name}" required>
         </label><br>
         <label>
-            種類: <input type="text" name="type" value="${pet.type}" required>
+            種類: <input type="text" name="type" value="${pet.type}">
         </label><br>
-        <label>
-            画像変更: <input type="file" name="image" accept="image/*">
-        </label><br>
-        <div id="current-image-preview" style="margin: 8px 0;">
-            ${pet.image ? `<img src="${pet.image}" width="32" height="32" alt="現在の画像"><br>` : '（画像なし）'}
+
+        <p>画像</p>
+        <div class="image-upload-container" id="image-container">
+        <span class="plus-icon" id="plus-icon"></span>
+        <img id="preview" src="" alt="" style="display:none; width: 100%; height: 100%; object-fit: cover;">
+        <button type="button" class="delete-button" id="delete-image-btn"></button>
         </div>
-        <button type="button" id="delete-image-btn">画像を削除</button><br><br>
-        <p>餌やり頻度(任意)</p>
+        <input type="file" id="image-input" name="image" accept="image/*" style="display:none;"><br>
+
+        <p>エサやり頻度(任意)</p>
         <label>
-            最短<input type="number" name="idealMinDays" value="${pet.idealMinDays ?? ''}" min="1" style="width: 4em;">日に一回
+            最短<input type="text" name="idealMinDays" value="${pet.idealMinDays ?? ''}" inputmode="numeric">日に1回
         </label><br>
         <label>
-            最長<input type="number" name="idealMaxDays" value="${pet.idealMaxDays ?? ''}" min="1" style="width: 4em;">日に一回
+            最長<input type="text" name="idealMaxDays" value="${pet.idealMaxDays ?? ''}" inputmode="numeric">日に1回
         </label><br><br>
-        <button type="submit">これでOK</button>
+        <button type="submit" class="submit-btn">これでOK</button>
     `;
 
-    let newImage = null; // 新しく選ばれた画像（Base64）
+    const imageInput = form.querySelector('#image-input');
+    const imageContainer = form.querySelector('#image-container');
+    const plusIcon = form.querySelector('#plus-icon');
+    const deleteBtn = form.querySelector('#delete-image-btn');
+    const preview = form.querySelector('#preview');
 
-    // 画像がアップロードされたら Base64 に変換
-    form.elements['image'].addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            newImage = await resizeImageToBase64(file, 32, 32); // 32x32 に変換して保存
-            const preview = form.querySelector('#current-image-preview');
-            preview.innerHTML = `<img src="${newImage}" width="32" height="32"><br>`;
+    let newImage = null;
+
+    // 初期状態（すでに画像がある場合）
+    if (pet.image) {
+        preview.src = pet.image;
+        preview.style.display = 'block';
+        plusIcon.style.display = 'none';
+        deleteBtn.style.display = 'flex';
+        imageContainer.classList.add('uploaded');
+    } else {
+        preview.style.display = 'none';
+        plusIcon.style.display = 'block';
+        deleteBtn.style.display = 'none';
+        imageContainer.classList.remove('uploaded');
+    }
+
+    // コンテナクリックで画像選択
+    imageContainer.addEventListener('click', () => {
+        if (preview.style.display === 'none') {
+            imageInput.click();
         }
     });
 
-    // 「画像を削除」ボタン処理
-    form.querySelector('#delete-image-btn').addEventListener('click', () => {
+    let isImageDeleted = false;
+
+    // アップロード処理
+    imageInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            newImage = await resizeImageToBase64(file);
+            isImageDeleted = false;
+            preview.src = newImage;
+            preview.style.display = 'block';
+            plusIcon.style.display = 'none';
+            deleteBtn.style.display = 'flex';
+            imageContainer.classList.add('uploaded');
+        }
+    });
+
+    // 削除処理
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         newImage = null;
-        form.elements['image'].value = ''; // ファイル選択リセット
-        const preview = form.querySelector('#current-image-preview');
-        preview.innerHTML = '（画像なし）';
+        isImageDeleted = true;
+        imageInput.value = '';
+        preview.src = '';
+        preview.style.display = 'none';
+        plusIcon.style.display = 'block';
+        deleteBtn.style.display = 'none';
+        imageContainer.classList.remove('uploaded');
     });
 
     // フォーム送信でDB更新
@@ -689,19 +744,15 @@ function openEditModal(pet, options = {}) {
             updatedFields.image = newImage;
         }
 
-        // ファイルが選ばれていない & 元画像がある & preview が空になってる → 削除された
-        const preview = form.querySelector('#current-image-preview');
-        if (
-            form.elements['image'].files.length === 0 &&
-            pet.image &&
-            !preview.querySelector('img')
-        ) {
+        // 画像削除されたか
+        if (isImageDeleted) {
             updatedFields.image = null;
         }
 
         // エサやり間隔
-        const idealMinInput = form.elements['idealMinDays'].value;
-        const idealMaxInput = form.elements['idealMaxDays'].value;
+        // 全角半角変換
+        const idealMinInput = toHalfWidthDigits(form.elements['idealMinDays'].value.trim());
+        const idealMaxInput = toHalfWidthDigits(form.elements['idealMaxDays'].value.trim());
 
         updatedFields.idealMinDays = idealMinInput === '' ? null : parseInt(idealMinInput, 10);
         updatedFields.idealMaxDays = idealMaxInput === '' ? null : parseInt(idealMaxInput, 10);
@@ -727,7 +778,7 @@ function openEditModal(pet, options = {}) {
                     <option value="3">3日前</option>
                 </select>
             </label>
-            <button type="button" id="quick-add-btn">に餌やりした</button>
+            <button type="button" id="quick-add-btn">にエサやりした</button>
         `;
         historyContainer.appendChild(quickAddContainer);
 
@@ -830,45 +881,67 @@ function openAddModal() {
                 名前:<input type="text" name="name" required>
             </label><br>
             <label>
-                種類:<input type="text" name="type" required>
+                種類:<input type="text" name="type">
+            </label><br>
+
+            <p>画像</p>
+            <div class="image-upload-container" id="image-container">
+            <span class="plus-icon" id="plus-icon"></span>
+            <img id="preview" src="" alt="" style="display:none; width: 100%; height: 100%; object-fit: cover;">
+            <button type="button" class="delete-button" id="delete-image-btn"></button>
+            </div>
+            <input type="file" id="image-input" name="image" accept="image/*" style="display:none;"><br>
+
+            <p>エサやり頻度(任意)</p>
+            <label>
+                最短<input type="text" name="idealMinDays" value="" inputmode="numeric">日に1回
             </label><br>
             <label>
-                アイコン画像(32x32): <input type="file" name="image" accept="image/*">
-            </label><br>
-            <div id="current-image-preview" style="margin: 8px 0;">（画像なし）</div>
-            <button type="button" id="delete-image-btn">画像を削除</button><br><br>
-            <p>餌やり頻度(任意)</p>
-            <label>
-                最短<input type="number" name="idealMinDays" value="" min="1" style="width: 4em;">日に一回
-            </label><br>
-            <label>
-                最長<input type="number" name="idealMaxDays" value="" min="1" style="width: 4em;">日に一回
+                最長<input type="text" name="idealMaxDays" value="" inputmode="numeric">日に1回
             </label><br><br>
-            <button type="button" id="cancel-add-btn">キャンセル</button>
-            <button type="submit">これでOK</button>
+            <button type="button" id="cancel-add-btn" class="cancel-btn">キャンセル</button><button type="submit" class="submit-btn">これでOK</button>
         </form>
     `;
 
     const form = modalContent.querySelector('#add-form');
-    const imageInput = form.elements['image'];
-    const preview = form.querySelector('#current-image-preview');
+    const imageInput = form.querySelector('#image-input');
+    const imageContainer = form.querySelector('#image-container');
+    const preview = form.querySelector('#preview');
+    const plusIcon = form.querySelector('#plus-icon');
+    const deleteBtn = form.querySelector('#delete-image-btn');
 
     let newImage = null;
 
-    // 画像がアップロードされたらプレビュー＆Base64変換
+    // コンテナをクリックで画像選択
+    imageContainer.addEventListener('click', () => {
+        if (preview.style.display === 'none') {
+            imageInput.click();
+        }
+    });
+
+    // アップロード
     imageInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
             newImage = await resizeImageToBase64(file);
-            preview.innerHTML = `<img src="${newImage}" width="32" height="32"><br>`;
+            preview.src = newImage;
+            preview.style.display = 'block';
+            plusIcon.style.display = 'none';
+            deleteBtn.style.display = 'flex';
+            imageContainer.classList.add('uploaded');
         }
     });
 
-    // 画像削除ボタン
-    form.querySelector('#delete-image-btn').addEventListener('click', () => {
+    // 削除
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // コンテナクリック無効化
         newImage = null;
         imageInput.value = '';
-        preview.innerHTML = '（画像なし）';
+        preview.src = '';
+        preview.style.display = 'none';
+        plusIcon.style.display = 'block';
+        deleteBtn.style.display = 'none';
+        imageContainer.classList.remove('uploaded');
     });
 
     // キャンセル
@@ -886,8 +959,10 @@ function openAddModal() {
             newPet.image = newImage;
         }
 
-        const idealMinInput = form.elements['idealMinDays'].value;
-        const idealMaxInput = form.elements['idealMaxDays'].value;
+        // エサやり間隔
+        // 全角半角変換
+        const idealMinInput = toHalfWidthDigits(form.elements['idealMinDays'].value.trim());
+        const idealMaxInput = toHalfWidthDigits(form.elements['idealMaxDays'].value.trim());
 
         if (idealMinInput !== '') {
             newPet.idealMinDays = parseInt(idealMinInput, 10);
