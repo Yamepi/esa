@@ -30,6 +30,27 @@ body {
         sans-serif;
 }
 
+h1,
+h2,
+h3 {
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 1.75rem;
+    padding-bottom: 0.5rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+    padding-bottom: 0.5rem;
+}
+
 #header-menu-container {
     max-width: 500px;
     margin-inline: auto;
@@ -130,13 +151,17 @@ body.reorder-mode #reorder-toggle-btn {
     grid-template-columns: 24px 74px 1fr 48px;
 }
 
-.editPetBtn {
+.edit-pet-btn {
     all: unset;
     display: inline-block;
     text-align: center;
     cursor: pointer;
     font-size: 0.5rem;
     transform: rotate(-45deg);
+}
+
+body.reorder-mode .edit-pet-btn {
+ display: none;
 }
 
 .pet-image {
@@ -421,6 +446,26 @@ body.reorder-mode #reorder-toggle-btn {
     padding: 5px 7px;
 }
 
+#add-form,
+#edit-form {
+    display: flex;
+    flex-flow: column;
+    gap: 15px;
+}
+
+.form-info {
+    font-weight: bold;
+}
+
+.line {
+    background-color: var(--main-border-color);
+    height: 1px;
+}
+
+.ideal-days-input {
+    width: 50px;
+}
+
 .cancel-btn,
 .submit-btn {
     outline: none;
@@ -435,6 +480,7 @@ body.reorder-mode #reorder-toggle-btn {
 .cancel-btn {
     background-color: var(--sub-bg-color);
     border: 1px solid var(--main-border-color);
+    color: var(--sub-text-color);
 }
 
 .submit-btn {
@@ -445,81 +491,86 @@ body.reorder-mode #reorder-toggle-btn {
 
 /* 画像アップロード */
 .image-upload-container {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  border: 1px solid var(--main-border-color);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background-color: var(--modal-bg-color);
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: var(--modal-bg-color);
 }
 
 .image-upload-container.uploaded {
-  border: 1px solid var(--main-border-color);
+    border: 1px solid var(--main-border-color);
+}
+
+.image-upload-container img {
+    border-radius: 5px;
+    image-rendering: pixelated;
 }
 
 /* プラスアイコン*/
 .plus-icon {
-  position: relative;
-  width: 24px;
-  height: 24px;
+    position: relative;
+    width: 24px;
+    height: 24px;
 }
 
 .plus-icon::before,
 .plus-icon::after {
-  content: '';
-  position: absolute;
-  background-color: var(--main-border-color);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+    content: '';
+    position: absolute;
+    background-color: var(--main-border-color);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .plus-icon::before {
-  width: 16px;
-  height: 2px;
+    width: 16px;
+    height: 2px;
 }
 
 .plus-icon::after {
-  width: 2px;
-  height: 16px;
+    width: 2px;
+    height: 16px;
 }
 
 /* バツアイコン */
 .delete-button {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 24px;
-  height: 24px;
-  background: rgba(64, 64, 64, 0.5);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  display: none;
-  z-index: 10;
-  padding: 0;
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 24px;
+    height: 24px;
+    background-color: rgba(64, 64, 64, 0.5);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    z-index: 10;
+    padding: 0;
 }
 
 .delete-button::before,
 .delete-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 2px;
-  background: white;
-  transform-origin: center;
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 2px;
+    background-color: white;
+    transform-origin: center;
 }
 
 .delete-button::before {
-  transform: translate(-50%, -50%) rotate(45deg);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .delete-button::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
+    transform: translate(-50%, -50%) rotate(-45deg);
 }

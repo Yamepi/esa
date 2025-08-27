@@ -151,7 +151,7 @@ function createPetElement(pet, feeds, pastDates, today) {
 
     // 編集ボタン
     const editBtn = document.createElement('button');
-    editBtn.classList.add('editPetBtn');
+    editBtn.classList.add('edit-pet-btn');
     editBtn.textContent = 'EDIT';
     editBtn.dataset.petId = pet.id;
     div.appendChild(editBtn);
@@ -646,31 +646,33 @@ function openEditModal(pet, options = {}) {
     switchTab(activeTab); // 初期表示タブを選択
 
     const form = document.createElement('form');
+    form.id = 'edit-form';
     form.innerHTML = `
-        <h2>ペットを編集</h2>
         <label>
-            名前: <input type="text" name="name" value="${pet.name}" required>
-        </label><br>
+            名前<input type="text" name="name" value="${pet.name}" required>
+        </label>
         <label>
-            種類: <input type="text" name="type" value="${pet.type}">
-        </label><br>
-
-        <p>画像</p>
+            種類<input type="text" name="type" value="${pet.type}">
+        </label>
+        <div class="line"></div>
+        <p class="form-info">画像</p>
         <div class="image-upload-container" id="image-container">
-        <span class="plus-icon" id="plus-icon"></span>
-        <img id="preview" src="" alt="" style="display:none; width: 100%; height: 100%; object-fit: cover;">
-        <button type="button" class="delete-button" id="delete-image-btn"></button>
+            <span class="plus-icon" id="plus-icon"></span>
+            <img id="preview" src="" alt="" style="display:none; width: 100%; height: 100%; object-fit: cover;">
+            <button type="button" class="delete-button" id="delete-image-btn"></button>
         </div>
-        <input type="file" id="image-input" name="image" accept="image/*" style="display:none;"><br>
-
-        <p>エサやり頻度(任意)</p>
+        <input type="file" id="image-input" name="image" accept="image/*" style="display:none;">
+        <div class="line"></div>
+        <p class="form-info">エサやり頻度(オプション)</p>
         <label>
-            最短<input type="text" name="idealMinDays" value="${pet.idealMinDays ?? ''}" inputmode="numeric">日に1回
-        </label><br>
-        <label>
-            最長<input type="text" name="idealMaxDays" value="${pet.idealMaxDays ?? ''}" inputmode="numeric">日に1回
-        </label><br><br>
-        <button type="submit" class="submit-btn">これでOK</button>
+            <input type="text" name="idealMinDays" class="ideal-days-input" value="${pet.idealMinDays ?? ''}" inputmode="numeric">
+            日から
+            <input type="text" name="idealMaxDays" class="ideal-days-input" value="${pet.idealMaxDays ?? ''}" inputmode="numeric">
+            日に1回
+        </label>
+        <div class="submit-container">
+            <button type="submit" class="submit-btn">これでOK</button>
+        </div>
     `;
 
     const imageInput = form.querySelector('#image-input');
@@ -878,28 +880,30 @@ function openAddModal() {
         <h2>ペットを追加</h2>
         <form id="add-form">
             <label>
-                名前:<input type="text" name="name" required>
-            </label><br>
+                名前<input type="text" name="name" required>
+            </label>
             <label>
-                種類:<input type="text" name="type">
-            </label><br>
-
-            <p>画像</p>
+                種類<input type="text" name="type">
+            </label>
+            <div class="line"></div>
+            <p class="form-info">画像</p>
             <div class="image-upload-container" id="image-container">
-            <span class="plus-icon" id="plus-icon"></span>
-            <img id="preview" src="" alt="" style="display:none; width: 100%; height: 100%; object-fit: cover;">
-            <button type="button" class="delete-button" id="delete-image-btn"></button>
+                <span class="plus-icon" id="plus-icon"></span>
+                <img id="preview" src="" alt="" style="display:none; width: 100%; height: 100%; object-fit: cover;">
+                <button type="button" class="delete-button" id="delete-image-btn"></button>
             </div>
-            <input type="file" id="image-input" name="image" accept="image/*" style="display:none;"><br>
-
-            <p>エサやり頻度(任意)</p>
+            <input type="file" id="image-input" name="image" accept="image/*" style="display:none;">
+            <div class="line"></div>
+            <p class="form-info">エサやり頻度(オプション)</p>
             <label>
-                最短<input type="text" name="idealMinDays" value="" inputmode="numeric">日に1回
-            </label><br>
-            <label>
-                最長<input type="text" name="idealMaxDays" value="" inputmode="numeric">日に1回
-            </label><br><br>
-            <button type="button" id="cancel-add-btn" class="cancel-btn">キャンセル</button><button type="submit" class="submit-btn">これでOK</button>
+                <input type="text" name="idealMinDays" class="ideal-days-input" value="" inputmode="numeric">
+                日から
+                <input type="text" name="idealMaxDays" class="ideal-days-input" value="" inputmode="numeric">日に1回
+            </label>
+            <div class="submit-container">
+                <button type="button" id="cancel-add-btn" class="cancel-btn">キャンセル</button>
+                <button type="submit" class="submit-btn">これでOK</button>
+            </div>
         </form>
     `;
 
