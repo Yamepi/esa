@@ -29,8 +29,8 @@ function isSameDay(date1, date2) {
     );
 }
 
-// 画像を32x32にリサイズする関数
-function resizeImageToBase64(file, width = 32, height = 32) {
+// 画像を正方形にして32x32にリサイズする関数
+function resizeImageToSquareBase64(file, size = 32) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         const reader = new FileReader();
@@ -40,12 +40,28 @@ function resizeImageToBase64(file, width = 32, height = 32) {
         };
 
         img.onload = () => {
+            // 正方形の辺の長さを決める（元画像の短い方）
+            const squareSize = Math.min(img.width, img.height);
+
+            // トリミング開始位置（中心を基準）
+            const startX = (img.width - squareSize) / 2;
+            const startY = (img.height - squareSize) / 2;
+
             const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = size;
+            canvas.height = size;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/png')); // ← Base64 string
+
+            // 元画像の正方形部分をcanvasに32x32で描画
+            ctx.drawImage(
+                img,
+                startX, startY,          // トリム開始位置
+                squareSize, squareSize,  // トリムするサイズ
+                0, 0,                    // canvas上の描画開始位置
+                size, size               // canvas上の描画サイズ
+            );
+
+            resolve(canvas.toDataURL('image/png'));
         };
 
         reader.onerror = reject;
@@ -710,7 +726,7 @@ function openEditModal(pet, options = {}) {
     imageInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
-            newImage = await resizeImageToBase64(file);
+            newImage = await resizeImageToSquareBase64(file);
             isImageDeleted = false;
             preview.src = newImage;
             preview.style.display = 'block';
@@ -927,7 +943,7 @@ function openAddModal() {
     imageInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
-            newImage = await resizeImageToBase64(file);
+            newImage = await resizeImageToSquareBase64(file);
             preview.src = newImage;
             preview.style.display = 'block';
             plusIcon.style.display = 'none';
