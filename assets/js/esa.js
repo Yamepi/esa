@@ -17,6 +17,15 @@ async function initializeOnce() {
             order: 0
         });
         await db.meta.put({ key: 'isInitialized', value: true });
+        await db.meta.put({ key: 'feedStatusDisplayMode', value: 'text' });
+        await db.meta.put({
+            key: 'feedStatusTexts',
+            value: {
+                tooSoon: '🙂',
+                ideal: '😆',
+                tooLate: '😡'
+            }
+        });
     }
 }
 
@@ -159,7 +168,7 @@ function updateReorderButtonState() {
 }
 
 // ペット1匹の表示要素を作成
-function createPetElement(pet, feeds, pastDates, today) {
+async function createPetElement(pet, feeds, pastDates, today) {
     // メインコンテナ
     const div = document.createElement('div');
     div.classList.add('pet-entry');
@@ -203,6 +212,10 @@ function createPetElement(pet, feeds, pastDates, today) {
     const lastFeedDate = petFeeds.map(getDateOnly).sort((a, b) => b - a)[0];
     const todayDateOnly = getDateOnly(today);
 
+    // モードとテキスト設定を取得
+    const displayMode = (await db.meta.get('feedStatusDisplayMode'))?.value || 'color';
+    const customTexts = (await db.meta.get('feedStatusTexts'))?.value || null;
+
     // 今日エサやりしていなければ、経過日数を計算
     if (lastFeedDate && lastFeedDate.getTime() !== todayDateOnly.getTime()) {
         const diffDays = Math.floor((todayDateOnly - lastFeedDate) / (1000 * 60 * 60 * 24));
@@ -234,9 +247,9 @@ function createPetElement(pet, feeds, pastDates, today) {
         // エサやり頻度の判定
         let statusClass = '';
         if (typeof pet.idealMinDays === 'number' && diffDays < pet.idealMinDays) {
-            statusClass = 'too-soon';
+            statusClass = 'tooSoon';
         } else if (typeof pet.idealMaxDays === 'number' && diffDays > pet.idealMaxDays) {
-            statusClass = 'too-late';
+            statusClass = 'tooLate';
         } else if (
             typeof pet.idealMinDays === 'number' ||
             typeof pet.idealMaxDays === 'number'
@@ -244,13 +257,24 @@ function createPetElement(pet, feeds, pastDates, today) {
             statusClass = 'ideal';
         }
 
-        if (statusClass) {
+        // 色 or テキストの表示切り替え
+        if (displayMode === 'color') {
             lastFeedDays.classList.add(statusClass);
+            // 要素を追加
+            lastFeedDiv.appendChild(lastFeedLabel);
+            lastFeedDiv.appendChild(lastFeedDays);
+        } else if (displayMode === 'text') {
+            // 元のテキストをクリア
+            lastFeedLabel.textContent = '';
+            lastFeedDays.textContent = '';
+            const statusText = document.createElement('div');
+            statusText.className = 'feed-status-text';
+            statusText.textContent = customTexts[statusClass];
+            lastFeedDays.appendChild(statusText);
+            // 要素を追加
+            lastFeedDiv.appendChild(lastFeedLabel);
+            lastFeedDiv.appendChild(lastFeedDays);
         }
-
-        // 要素を追加
-        lastFeedDiv.appendChild(lastFeedLabel);
-        lastFeedDiv.appendChild(lastFeedDays);
 
         div.appendChild(lastFeedDiv);
     }
@@ -374,7 +398,7 @@ async function updatePetElement(petId) {
         pastDates.push(d);
     }
 
-    const newElement = createPetElement(pet, feeds, pastDates, today);
+    const newElement = await createPetElement(pet, feeds, pastDates, today);
     const container = document.getElementById('pet-list');
     const oldElement = container.querySelector(`.pet-entry[data-pet-id="${petId}"]`);
 
@@ -498,7 +522,7 @@ async function renderPetList() {
 
     // ペット一覧描画
     for (const pet of pets) {
-        const petElement = createPetElement(pet, feeds, pastDates, today);
+        const petElement = await createPetElement(pet, feeds, pastDates, today);
         container.appendChild(petElement);
     }
 
@@ -510,9 +534,17 @@ async function renderPetList() {
 }
 
 // 設定モーダル
-function openSettingsModal() {
+async function openSettingsModal() {
     const modal = document.getElementById('settings-modal');
     const modalContent = modal.querySelector('.modal-content');
+
+    // 現在の設定を取得
+    const displayMode = (await db.meta.get('feedStatusDisplayMode'))?.value || 'color';
+    const customTexts = (await db.meta.get('feedStatusTexts'))?.value || {
+        tooSoon: '',
+        ideal: '',
+        tooLate: ''
+    };
 
     // モーダルの中身
     modalContent.innerHTML = `
@@ -520,13 +552,75 @@ function openSettingsModal() {
             <h2>設定</h2>
             <button type="button" id="close-settings-btn">X</button>
         </div>
+
+        <div style="margin-top: 20px;">
+            <label><strong>餌やりステータスの表示方法</strong></label><br>
+            <label>
+                <input type="radio" name="displayMode" value="color" ${displayMode === 'color' ? 'checked' : ''}>
+                日付表示
+            </label><br>
+            <label>
+                <input type="radio" name="displayMode" value="text" ${displayMode === 'text' ? 'checked' : ''}>
+                テキスト表示
+            </label>
+        </div>
+
+        <div id="custom-text-section" style="margin-top: 10px; ${displayMode === 'text' ? '' : 'display:none;'}">
+            <label>
+                早い: <input type="text" id="text-too-soon" value="${customTexts.tooSoon || ''}">
+            </label><br>
+            <label>
+                理想: <input type="text" id="text-ideal" value="${customTexts.ideal || ''}">
+            </label><br>
+            <label>
+                遅い: <input type="text" id="text-too-late" value="${customTexts.tooLate || ''}">
+            </label>
+        </div>
+
+        <button id="save-display-settings-btn" style="margin-top:10px;">保存</button>
+
+        <div class="line" style="margin:20px 0;"></div>
+
         <div id="delete-pet-section"></div>
+
         <button id="export-btn" style="margin-top: 20px;">データを書き出す（エクスポート）</button>
+
         <label style="display:block; margin-top:20px;">
             データを読み込む（インポート）:
             <input type="file" id="import-input" accept="application/json">
         </label>
     `;
+
+    // 表示モード切り替え時、テキスト入力欄の表示切り替え
+    modalContent.querySelectorAll('input[name="displayMode"]').forEach(radio => {
+        radio.addEventListener('change', e => {
+            const customTextSection = document.getElementById('custom-text-section');
+            customTextSection.style.display = e.target.value === 'text' ? 'block' : 'none';
+        });
+    });
+
+    // 保存ボタン処理
+    modalContent.querySelector('#save-display-settings-btn').addEventListener('click', async () => {
+        const selectedMode = modalContent.querySelector('input[name="displayMode"]:checked').value;
+
+        await db.meta.put({ key: 'feedStatusDisplayMode', value: selectedMode });
+
+        if (selectedMode === 'text') {
+            const newTexts = {
+                tooSoon: modalContent.querySelector('#text-too-soon').value.trim(),
+                ideal: modalContent.querySelector('#text-ideal').value.trim(),
+                tooLate: modalContent.querySelector('#text-too-late').value.trim()
+            };
+            await db.meta.put({ key: 'feedStatusTexts', value: newTexts });
+        } else {
+            // textモードじゃなければ空で保存 or 削除も可
+            // await db.meta.delete('feedStatusTexts');
+        }
+
+        alert('設定を保存しました');
+        await renderPetList();
+        closeModal();
+    });
 
     // 閉じるボタンにイベントリスナーをセット
     modalContent.querySelector('#close-settings-btn').addEventListener('click', closeModal);
@@ -1009,7 +1103,7 @@ function openAddModal() {
             pastDates.push(d);
         }
 
-        const newElement = createPetElement(pet, feeds, pastDates, today);
+        const newElement = await createPetElement(pet, feeds, pastDates, today);
         const container = document.getElementById('pet-list');
         container.appendChild(newElement);
 

@@ -219,6 +219,13 @@ body.reorder-mode .edit-pet-btn {
     font-weight: bold;
 }
 
+.feed-status-text {
+    font-size: 1rem;
+    padding-top: 5px;
+    padding-right: 5px;
+    text-align: right;
+}
+
 .feed-history {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
