@@ -268,20 +268,13 @@ async function createPetElement(pet, feeds, pastDates, today) {
         // 色 or テキストの表示切り替え
         if (displayMode === 'color') {
             lastFeedDays.classList.add(statusClass);
-            // 要素を追加
             lastFeedDiv.appendChild(lastFeedLabel);
             lastFeedDiv.appendChild(lastFeedDays);
         } else if (displayMode === 'text') {
-            // 元のテキストをクリア
-            lastFeedLabel.textContent = '';
-            lastFeedDays.textContent = '';
             const statusText = document.createElement('div');
             statusText.className = 'feed-status-text';
             statusText.textContent = customTexts[statusClass];
-            lastFeedDays.appendChild(statusText);
-            // 要素を追加
-            lastFeedDiv.appendChild(lastFeedLabel);
-            lastFeedDiv.appendChild(lastFeedDays);
+            div.appendChild(statusText);
         }
 
         div.appendChild(lastFeedDiv);
