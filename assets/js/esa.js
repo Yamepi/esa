@@ -26,6 +26,7 @@ async function initializeOnce() {
                 tooLate: '😡'
             }
         });
+        await db.meta.put({ key: 'showFeedDate', value: true });
     }
 }
 
@@ -180,6 +181,13 @@ async function createPetElement(pet, feeds, pastDates, today) {
     editBtn.textContent = 'EDIT';
     editBtn.dataset.petId = pet.id;
     div.appendChild(editBtn);
+
+    // 履歴日付表示
+    const showFeedDateMeta = await db.meta.get('showFeedDate');
+    const showFeedDate = showFeedDateMeta?.value ?? false;
+    if (showFeedDate === false) {
+        div.classList.add('hide-feed-date');
+    }
 
     // 画像がある場合
     if (pet.image) {
@@ -545,6 +553,7 @@ async function openSettingsModal() {
         ideal: '',
         tooLate: ''
     };
+    const showFeedDate = (await db.meta.get('showFeedDate'))?.value ?? false;
 
     // モーダルの中身
     modalContent.innerHTML = `
@@ -577,7 +586,14 @@ async function openSettingsModal() {
             </label>
         </div>
 
-        <button id="save-display-settings-btn" style="margin-top:10px;">保存</button>
+        <div style="margin-top: 20px;">
+            <label>
+                <input type="checkbox" id="checkbox-show-feed-date" ${showFeedDate ? 'checked' : ''}>
+                餌やり履歴に日付を表示する
+            </label>
+        </div>
+
+        <button id="save-display-settings-btn" style="margin-top:10px;">設定を保存</button>
 
         <div class="line" style="margin:20px 0;"></div>
 
@@ -616,6 +632,9 @@ async function openSettingsModal() {
             // textモードじゃなければ空で保存 or 削除も可
             // await db.meta.delete('feedStatusTexts');
         }
+
+        const showFeedDateChecked = modalContent.querySelector('#checkbox-show-feed-date').checked;
+        await db.meta.put({ key: 'showFeedDate', value: showFeedDateChecked });
 
         alert('設定を保存しました');
         await renderPetList();

@@ -152,6 +152,17 @@ body.reorder-mode #reorder-toggle-btn {
     grid-template-columns: 24px 74px 1fr 48px;
 }
 
+.hide-feed-date {
+    grid-template-rows: 24px 50px 27px;
+}
+
+.hide-feed-date .feed-history .history-item .has-feed::before,
+.hide-feed-date .feed-history .history-item .has-feed span,
+.hide-feed-date .feed-history .history-item .today-feed-check::before,
+.hide-feed-date .feed-history .history-item .date-label span {
+    display: none;
+}
+
 .edit-pet-btn {
     all: unset;
     display: inline-block;
@@ -477,6 +488,7 @@ body.reorder-mode .edit-pet-btn {
     width: 50px;
 }
 
+#save-display-settings-btn,
 #quick-add-btn,
 #feed-day-submit-btn,
 .delete-history-btn,
@@ -491,6 +503,7 @@ body.reorder-mode .edit-pet-btn {
     font-size: 0.8rem;
 }
 
+#save-display-settings-btn,
 #feed-day-submit-btn,
 #quick-add-btn {
     background-color: var(--submit-button-color);
