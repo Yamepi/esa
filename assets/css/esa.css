@@ -52,6 +52,10 @@ h3 {
     padding-bottom: 0.5rem;
 }
 
+header {
+    padding: 0 10px;
+}
+
 #header-menu-container {
     max-width: 500px;
     margin-inline: auto;
@@ -65,7 +69,14 @@ h3 {
     text-align: center;
     cursor: pointer;
     background-color: var(--sub-bg-color);
-    padding: 15px;
+    height: 50px;
+}
+
+#settings-btn img,
+#reorder-toggle-btn img,
+#add-pet-btn img {
+    width: 20px;
+    height: 20px;
 }
 
 #bulk-feed-checkbox-container {
@@ -74,6 +85,15 @@ h3 {
     padding-top: 15px;
     padding-right: 13px;
     text-align: right;
+}
+
+#bulk-feed-checkbox-container::before {
+    content: '';
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    margin-right: 5px;
+    background-image: url(../images/esa.svg);
 }
 
 #bulk-feed-checkbox-container label {
@@ -114,6 +134,11 @@ main {
     margin-top: 10px;
 }
 
+#tool-container button {
+    width: 50px;
+    height: 50px;
+}
+
 /* ペット追加ボタン・並び替えボタン */
 #add-pet-btn,
 #reorder-toggle-btn {
@@ -122,14 +147,6 @@ main {
     text-align: center;
     cursor: pointer;
     background-color: var(--sub-bg-color);
-}
-
-#add-pet-btn {
-    padding: 15px 15px;
-}
-
-#reorder-toggle-btn {
-    padding: 15px 11px;
 }
 
 /* 無効な並び替えボタン */
@@ -166,11 +183,15 @@ body.reorder-mode #reorder-toggle-btn {
 
 .edit-pet-btn {
     all: unset;
-    display: inline-block;
-    text-align: center;
     cursor: pointer;
-    font-size: 0.5rem;
-    transform: rotate(-45deg);
+}
+
+.edit-pet-btn::before {
+    content: '';
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    background-image: url(../images/edit.svg);
 }
 
 body.reorder-mode .edit-pet-btn {

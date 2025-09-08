@@ -178,7 +178,6 @@ async function createPetElement(pet, feeds, pastDates, today) {
     // 編集ボタン
     const editBtn = document.createElement('button');
     editBtn.classList.add('edit-pet-btn');
-    editBtn.textContent = 'EDIT';
     editBtn.dataset.petId = pet.id;
     div.appendChild(editBtn);
 
@@ -467,7 +466,6 @@ async function renderPetList() {
     const bulkCheckbox = document.createElement('input');
     bulkCheckbox.type = 'checkbox';
     bulkCheckbox.id = 'bulk-feed-checkbox';
-    bulkLabel.appendChild(document.createTextNode('まとめてエサ'));
     bulkLabel.appendChild(bulkCheckbox);
 
     bulkContainer.appendChild(bulkLabel);
