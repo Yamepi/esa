@@ -550,53 +550,87 @@ async function openSettingsModal() {
     modalContent.innerHTML = `
         <div class="modal-header">
             <h2>設定</h2>
-            <button type="button" id="close-settings-btn">X</button>
+            <button type="button" id="close-settings-btn">
+                <img src="assets/images/x.svg" alt="close">
+            </button>
         </div>
 
-        <div style="margin-top: 20px;">
-            <label><strong>餌やりステータスの表示方法</strong></label><br>
+        <!-- タブヘッダー -->
+        <div class="tab-header">
+            <button class="tab-btn active" data-tab="display">表示設定</button>
+            <button class="tab-btn" data-tab="data">データ管理</button>
+        </div>
+
+        <!-- 表示設定タブ -->
+        <div class="tab-content" id="tab-display" style="display:flex;">
+            <label><strong>エサやりタイミング表示</strong></label><br>
             <label>
                 <input type="radio" name="displayMode" value="color" ${displayMode === 'color' ? 'checked' : ''}>
-                日付表示
+                日付
             </label><br>
             <label>
                 <input type="radio" name="displayMode" value="text" ${displayMode === 'text' ? 'checked' : ''}>
-                テキスト表示
+                テキスト
             </label>
-        </div>
 
-        <div id="custom-text-section" style="margin-top: 10px; ${displayMode === 'text' ? '' : 'display:none;'}">
-            <label>
-                早い: <input type="text" id="text-too-soon" value="${customTexts.tooSoon || ''}">
-            </label><br>
-            <label>
-                理想: <input type="text" id="text-ideal" value="${customTexts.ideal || ''}">
-            </label><br>
-            <label>
-                遅い: <input type="text" id="text-too-late" value="${customTexts.tooLate || ''}">
-            </label>
-        </div>
+            <div id="custom-text-section" style="margin-top: 10px; ${displayMode === 'text' ? '' : 'display:none;'}">
+                <label>
+                    早い: <input type="text" id="text-too-soon" value="${customTexts.tooSoon || ''}">
+                </label><br>
+                <label>
+                    理想: <input type="text" id="text-ideal" value="${customTexts.ideal || ''}">
+                </label><br>
+                <label>
+                    遅い: <input type="text" id="text-too-late" value="${customTexts.tooLate || ''}">
+                </label>
+            </div>
 
-        <div style="margin-top: 20px;">
+            <div class="line" style="margin:20px 0;"></div>
+
             <label>
                 <input type="checkbox" id="checkbox-show-feed-date" ${showFeedDate ? 'checked' : ''}>
-                餌やり履歴に日付を表示する
+                エサやり履歴に日付を表示する
             </label>
+
+            <div class="submit-container">
+                <button id="save-display-settings-btn" style="margin-top:20px;">これでOK</button>
+            </div>
+
         </div>
 
-        <button id="save-display-settings-btn" style="margin-top:10px;">設定を保存</button>
+        <!-- データ管理タブ -->
+        <div class="tab-content" id="tab-data" style="display:none;">
+            <div id="delete-pet-section"></div>
 
-        <div class="line" style="margin:20px 0;"></div>
+            <button id="export-btn" style="margin-top: 20px;">データを書き出す（エクスポート）</button>
 
-        <div id="delete-pet-section"></div>
-
-        <button id="export-btn" style="margin-top: 20px;">データを書き出す（エクスポート）</button>
-
-        <label style="display:block; margin-top:20px;">
-            データを読み込む（インポート）:
-            <input type="file" id="import-input" accept="application/json">
-        </label>
+            <label style="display:block; margin-top:20px;">
+                データを読み込む（インポート）:
+                <input type="file" id="import-input" accept="application/json">
+            </label>
+        </div>
     `;
+
+    // タブ切り替え
+    const tabButtons = modalContent.querySelectorAll('.tab-btn');
+    const tabContents = modalContent.querySelectorAll('.tab-content');
+
+    function switchTab(tabName) {
+        tabButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        tabContents.forEach(content => {
+            content.style.display = content.id === `tab-${tabName}` ? 'flex' : 'none';
+        });
+    }
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchTab(btn.dataset.tab);
+        });
+    });
+
+    switchTab('display'); // 初期表示
 
     // 表示モード切り替え時、テキスト入力欄の表示切り替え
     modalContent.querySelectorAll('input[name="displayMode"]').forEach(radio => {
@@ -626,8 +660,6 @@ async function openSettingsModal() {
 
         const showFeedDateChecked = modalContent.querySelector('#checkbox-show-feed-date').checked;
         await db.meta.put({ key: 'showFeedDate', value: showFeedDateChecked });
-
-        alert('設定を保存しました');
         await renderPetList();
         closeModal();
     });
@@ -731,7 +763,9 @@ function openEditModal(pet, options = {}) {
     modalContent.innerHTML = `
         <div class="modal-header">
             <h2>編集</h2>
-            <button type="button" class="modal-close-btn" id="close-edit-btn">X</button>
+            <button type="button" class="modal-close-btn" id="close-edit-btn">
+                <img src="assets/images/x.svg" alt="close">
+            </button>
         </div>
         <div class="tab-header">
             <button class="tab-btn active" data-tab="info">ペットの情報</button>
@@ -999,7 +1033,9 @@ function openAddModal() {
     modalContent.innerHTML = `
         <div class="modal-header">
             <h2>ペットを追加</h2>
-            <button type="button" class="modal-close-btn" id="close-btn">X</button>
+            <button type="button" class="modal-close-btn" id="close-btn">
+                <img src="assets/images/x.svg" alt="close">
+            </button>
         </div>
         <form id="add-form">
             <label>
