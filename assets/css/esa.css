@@ -303,18 +303,19 @@ body.reorder-mode .edit-pet-btn {
 /* 過去の餌やりの日付 */
 .has-feed .month,
 .has-feed .day {
-    position: relative;
+    position: absolute;
     display: inline-block;
-    top: 20px;
     color: var(--cal-text-color);
 }
 
 .has-feed .month {
-    left: -0.4rem;
+    top: 20px;
+    left: -2px;
 }
 
 .has-feed .day {
-    left: 0.4rem;
+    top: 32px;
+    left: 8px;
 }
 
 /* 日付斜め線 */
